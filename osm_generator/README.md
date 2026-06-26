@@ -34,7 +34,7 @@ Visualiza y renderiza el diseño catastral y de zonificación en una imagen PNG 
 
 Convierte y exporta la misma distribución espacial y topología definida en el generador de mapas directamente a un formato vectorial XML estándar de OpenStreetMap (`.osm`).
 
-* **Georreferenciación**: Centrado en coordenadas GPS reales `(27.07991, -109.70707)` (Sonora, México).
+* **Georreferenciación**: Centrado en coordenadas GPS reales `(62.12422301, 90.81880494)`.
 * **Características**:
   * **Recorte Geométrico Limpio**: Implementa un algoritmo de sustracción rectangular recursivo (`subtract_rects`) para recortar las parcelas de cultivo donde se solapan con otros elementos (pueblos, bosques, embalses, granjas, etc.), garantizando que no haya geometrías duplicadas o superpuestas.
   * **Conectividad Topológica**: Los caminos horizontales y verticales están conectados correctamente mediante nodos compartidos en las intersecciones.
@@ -71,7 +71,7 @@ Todos los resultados se guardarán automáticamente en el directorio [`outputs/`
 
 
 ## Coordenadas de Referencia (OSM):
-Center coordinates: (27.07991, -109.70707)
+Center coordinates: (62.12422301, 90.81880494)
 Distance from center: 4096.0 meters (Map Size: 8192x8192m)
-Computed Bounding Box (W, S, E, N): (-109.748441630125, 27.043073839058213, -109.665698369875, 27.11674616094179)
+Computed Bounding Box (W, S, E, N): (90.74002036272485, 62.08738679702157, 90.89758951727516, 62.16105922297843)
 

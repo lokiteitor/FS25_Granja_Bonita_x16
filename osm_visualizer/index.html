@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Límites OSM</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet.js Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar HUD -->
+        <aside class="sidebar-hud">
+            <header class="hud-header">
+                <div class="brand">
+                    <span class="brand-icon"><i class="fa-solid fa-map-location-dot"></i></span>
+                    <div class="brand-text">
+                        <h1>OSM Visualizer</h1>
+                        <span class="badge">Editor de Región FS25</span>
+                    </div>
+                </div>
+                <p class="subtitle">Configurador y visualizador de límites</p>
+            </header>
+
+            <!-- Details Panel (Always visible now) -->
+            <div class="details-panel">
+                <!-- Center Input Section -->
+                <section class="hud-section highlight-section">
+                    <h3 class="section-title"><i class="fa-solid fa-sliders"></i> Centro de la Zona</h3>
+                    
+                    <div class="inputs-grid">
+                        <div class="input-group">
+                            <label for="input-lat" class="hud-input-label">Latitud Centro</label>
+                            <input type="number" id="input-lat" step="any" value="62.12422301" class="hud-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="input-lng" class="hud-input-label">Longitud Centro</label>
+                            <input type="number" id="input-lng" step="any" value="90.81880494" class="hud-input">
+                        </div>
+                    </div>
+                    
+                    <div class="size-selector-container">
+                        <label class="hud-input-label" style="display: block; margin-bottom: 8px;">Tamaño de la Región</label>
+                        <div class="segmented-control">
+                            <input type="radio" name="map-size" id="size-4096" value="4096">
+                            <label for="size-4096" class="segment-btn">4096 m <span class="size-desc">(4x)</span></label>
+                            
+                            <input type="radio" name="map-size" id="size-8192" value="8192" checked>
+                            <label for="size-8192" class="segment-btn">8192 m <span class="size-desc">(16x)</span></label>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-actions" style="margin-top: 16px;">
+                        <button class="btn btn-primary" id="btn-recenter"><i class="fa-solid fa-location-crosshairs"></i> Centrar Mapa</button>
+                        <button class="btn btn-secondary" id="btn-copy-center" title="Copiar como Lat,Lng"><i class="fa-regular fa-copy"></i> Copiar Lat,Lng</button>
+                    </div>
+                </section>
+
+                <!-- Outbounds (Bounds) Section -->
+                <section class="hud-section">
+                    <h3 class="section-title"><i class="fa-solid fa-border-style"></i> Límites Geográficos <span class="drag-badge"><i class="fa-solid fa-hand-back-fist"></i> Arrastrable</span></h3>
+                    <div class="bounds-compass">
+                        <div class="compass-cell north">
+                            <span class="compass-label">Norte (Max Lat)</span>
+                            <span class="compass-val number-mono" id="bound-maxlat">0.000000</span>
+                        </div>
+                        <div class="compass-row">
+                            <div class="compass-cell west">
+                                <span class="compass-label">Oeste (Min Lon)</span>
+                                <span class="compass-val number-mono" id="bound-minlon">0.000000</span>
+                            </div>
+                            <div class="compass-center">
+                                <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                            </div>
+                            <div class="compass-cell east">
+                                <span class="compass-label">Este (Max Lon)</span>
+                                <span class="compass-val number-mono" id="bound-maxlon">0.000000</span>
+                            </div>
+                        </div>
+                        <div class="compass-cell south">
+                            <span class="compass-label">Sur (Min Lat)</span>
+                            <span class="compass-val number-mono" id="bound-minlat">0.000000</span>
+                        </div>
+                    </div>
+                    <div class="bounds-info">
+                        <div class="info-row">
+                            <span>Ancho (Est-Oes):</span>
+                            <strong id="span-width" class="number-mono">-</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Alto (Nor-Sur):</span>
+                            <strong id="span-height" class="number-mono">-</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Superficie Aprox:</span>
+                            <strong id="span-area" class="number-mono">-</strong>
+                        </div>
+                        <div class="info-row border-top-divider" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                            <span style="color: #f97316;">Ancho Jugable (Est-Oes):</span>
+                            <strong id="playable-width" class="number-mono" style="color: #f97316;">-</strong>
+                        </div>
+                        <div class="info-row">
+                            <span style="color: #f97316;">Área Jugable:</span>
+                            <strong id="playable-area" class="number-mono" style="color: #f97316;">-</strong>
+                        </div>
+                    </div>
+                    <div class="hud-actions">
+                        <button class="btn btn-secondary" id="btn-copy-bounds" title="Copiar Bounds en JSON"><i class="fa-solid fa-code"></i> Copiar JSON</button>
+                        <button class="btn btn-secondary" id="btn-copy-bbox" title="Copiar formato minlon,minlat,maxlon,maxlat"><i class="fa-solid fa-arrow-right-long"></i> BBox String</button>
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Live Map Center -->
+            <div class="live-status">
+                <div class="status-indicator"></div>
+                <div class="status-text">
+                    Vista actual: <span id="map-center-live" class="number-mono">Lat: 0.00000, Lng: 0.00000</span> (Zoom: <span id="map-zoom-live" class="number-mono">0</span>)
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Map Area -->
+        <main class="map-view">
+            <!-- Map Container -->
+            <div id="map"></div>
+            
+            <!-- Floating Map Layer Controls (Custom styled) -->
+            <div class="map-overlay-controls">
+                <button class="map-control-btn active" id="layer-dark" title="Mapa Oscuro"><i class="fa-solid fa-moon"></i></button>
+                <button class="map-control-btn" id="layer-light" title="Mapa Claro"><i class="fa-solid fa-sun"></i></button>
+                <button class="map-control-btn" id="layer-satellite" title="Satélite"><i class="fa-solid fa-globe"></i></button>
+                <button class="map-control-btn" id="layer-osm" title="OpenStreetMap Estándar"><i class="fa-solid fa-map"></i></button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet.js Map Library -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Client logic -->
+    <script src="app.js"></script>
+</body>
+</html>
