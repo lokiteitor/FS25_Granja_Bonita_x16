@@ -103,11 +103,10 @@ def main():
     draw = ImageDraw.Draw(base_color_img)
     
     if ways_data:
-        # Bounding box bounds from zoning_map.osm (same as defined in JS)
-        min_lon = -109.748441630125
-        max_lon = -109.665698369875
-        min_lat = 27.043073839058213
-        max_lat = 27.11674616094179
+        min_lon = 37.715173389134144
+        max_lon = 37.82446513086585
+        min_lat = 47.57967188702157
+        max_lat = 47.653344312978426
         
         # Color definitions for tags
         # (tag_key, tag_value, hex_color)
@@ -785,10 +784,10 @@ def main():
         const PLAYABLE_OFFSET = (MAP_SIZE - PLAYABLE_SIZE) / 2;
         
         // OSM Bounds and Data (from zoning_map.osm)
-        const MIN_LON = -109.748441630125;
-        const MAX_LON = -109.665698369875;
-        const MIN_LAT = 27.043073839058213;
-        const MAX_LAT = 27.11674616094179;
+        const MIN_LON = 37.715173389134144;
+        const MAX_LON = 37.82446513086585;
+        const MIN_LAT = 47.57967188702157;
+        const MAX_LAT = 47.653344312978426;
         const OSM_DATA = {osm_data_json};
         
         let container, scene, camera, renderer, controls;

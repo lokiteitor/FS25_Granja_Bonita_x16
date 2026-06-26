@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------
     const map = L.map('map', {
         zoomControl: true,
-        center: [62.12422301, 90.81880494],
+        center: [47.61650810, 37.76981926],
         zoom: 12
     });
 

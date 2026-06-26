@@ -81,11 +81,11 @@ off = TH_T/2 + CW/2 + GAP
 # Lake and road loop definitions removed
 
 # --- Georeferencing ---
-# Center: (62.12422301, 90.81880494)
-min_lon = 90.74002036272485
-min_lat = 62.08738679702157
-max_lon = 90.89758951727516
-max_lat = 62.16105922297843
+# Center: (47.61650810, 37.76981926)
+min_lon = 37.715173389134144
+min_lat = 47.57967188702157
+max_lon = 37.82446513086585
+max_lat = 47.653344312978426
 
 def to_gps(x, y):
     lon = min_lon + (x / S) * (max_lon - min_lon)

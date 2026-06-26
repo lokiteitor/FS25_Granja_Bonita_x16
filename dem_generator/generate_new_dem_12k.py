@@ -84,11 +84,11 @@ def main():
         val_noise((S_px, S_px), 64, 100, seed=seed+3)
     )
     
-    # Background mountain noise (high amplitude, surrounding the map)
+    # Background hills noise (low amplitude rolling plains/steppes to match Donetsk/Donets Ridge geography)
     noise_mountains = (
-        val_noise((S_px, S_px), 12, 22000, seed=seed+4) +
-        val_noise((S_px, S_px), 24, 8000, seed=seed+5) +
-        val_noise((S_px, S_px), 48, 2000, seed=seed+6)
+        val_noise((S_px, S_px), 8, 4500, seed=seed+4) +
+        val_noise((S_px, S_px), 16, 2000, seed=seed+5) +
+        val_noise((S_px, S_px), 32, 500, seed=seed+6)
     )
     
     # Compute background mountain weight (0 inside playable area x,y in [2048, 10240] meters, rises to 1.0 at 1024m away)
