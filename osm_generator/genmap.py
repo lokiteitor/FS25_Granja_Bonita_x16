@@ -135,19 +135,62 @@ for i in range(MILES):
         is_north = (j == 0)
         if is_north:
             if i >= 4:
-                # East half: long fields from east to west (no x_mid split)
+                # East half: long fields from east to west (no x_mid split) with random vertical merging
+                rows = [{'y0': y0 + r * 256, 'y1': y0 + (r + 1) * 256, 'used': False} for r in range(4)]
+                r = 0
+                while r < 3:
+                    if not rows[r]['used'] and not rows[r+1]['used']:
+                        if random.random() < 0.5:
+                            # Merge them
+                            parcels.append((x0, rows[r]['y0'], x1, rows[r+1]['y1']))
+                            rows[r]['used'] = True
+                            rows[r+1]['used'] = True
+                            r += 2
+                            continue
+                    r += 1
                 for r in range(4):
-                    y_start = y0 + r * 256
-                    y_end = y_start + 256
-                    parcels.append((x0, y_start, x1, y_end))
+                    if not rows[r]['used']:
+                        parcels.append((x0, rows[r]['y0'], x1, rows[r]['y1']))
             else:
-                # West half: standard split
-                x_mid = x0 + 512
+                # West half: standard split with random horizontal and vertical merging
+                grid = []
+                for c in range(2):
+                    col_cells = []
+                    cx0 = x0 if c == 0 else x0 + 512
+                    cx1 = x0 + 512 if c == 0 else x1
+                    for r in range(4):
+                        col_cells.append({
+                            'x0': cx0, 'x1': cx1,
+                            'y0': y0 + r * 256, 'y1': y0 + (r + 1) * 256,
+                            'used': False
+                        })
+                    grid.append(col_cells)
+                
+                # 1. Try to merge horizontally (left + right in same row)
                 for r in range(4):
-                    y_start = y0 + r * 256
-                    y_end = y_start + 256
-                    parcels.append((x0, y_start, x_mid, y_end))
-                    parcels.append((x_mid, y_start, x1, y_end))
+                    if random.random() < 0.4:
+                        parcels.append((x0, grid[0][r]['y0'], x1, grid[0][r]['y1']))
+                        grid[0][r]['used'] = True
+                        grid[1][r]['used'] = True
+                
+                # 2. Try to merge vertically (same column, adjacent rows)
+                for c in range(2):
+                    r = 0
+                    while r < 3:
+                        if not grid[c][r]['used'] and not grid[c][r+1]['used']:
+                            if random.random() < 0.4:
+                                parcels.append((grid[c][r]['x0'], grid[c][r]['y0'], grid[c][r]['x1'], grid[c][r+1]['y1']))
+                                grid[c][r]['used'] = True
+                                grid[c][r+1]['used'] = True
+                                r += 2
+                                continue
+                        r += 1
+                
+                # 3. Add remaining unmerged cells
+                for c in range(2):
+                    for r in range(4):
+                        if not grid[c][r]['used']:
+                            parcels.append((grid[c][r]['x0'], grid[c][r]['y0'], grid[c][r]['x1'], grid[c][r]['y1']))
             continue
             
         if i == 1 and j == 1:
@@ -190,7 +233,7 @@ for (x0, y0, x1, y1) in parcels:
         fill_col = C_RICE if (y0 >= m(7) or y0 < m(1)) else C_FARM
         rect(cx0, cy0, cx1, cy1, fill_col, outline=C_FARMB, width=W_FIELD_BORDER)
 
-# Southern Zone Fields (West: 5 circular fields + 2 square fields + 2 columns of 2x2 split fields in 2 rows, East: horizontal thin strips split in 2x4)
+# ================= Southern Zone Fields in Map =================
 y_start = 7208
 y_end = 8008
 x_min = 100
@@ -198,34 +241,178 @@ x_max = 3782
 N_cols_s = 9
 N_rows_s = 2
 R_s = 190
+margin_val = 0
 
 col_width = (x_max - x_min) / N_cols_s
 row_height = (y_end - y_start) / N_rows_s
 
-for r in range(N_rows_s):
-    cy = y_start + row_height / 2 + r * row_height
-    y0 = y_start + r * row_height
-    y1 = y0 + row_height
-    for c in range(N_cols_s):
-        x0 = x_min + c * col_width
-        x1 = x0 + col_width
-        cx = x_min + col_width / 2 + c * col_width
-        if c < 5:
-            rect(cx - R_s, cy - R_s, cx + R_s, cy + R_s, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
-        elif c in [5, 6]:
-            rect(x0, y0, x1, y1, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
-        else:
-            # Columns 7 and 8: split into 2x2 grid of smaller squares
-            sub_w = col_width / 2
-            sub_h = row_height / 2
-            for sr in range(2):
-                sy0 = y0 + sr * sub_h
-                sy1 = sy0 + sub_h
-                for sc in range(2):
-                    sx0 = x0 + sc * sub_w
-                    sx1 = sx0 + sub_w
-                    rect(sx0, sy0, sx1, sy1, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
+def add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s):
+    rect(cx0_s, cy0_s, cx1_s, cy1_s, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
 
+# West part columns 0 to 4 (circles)
+west_circles = []
+for c in range(5):
+    col_cells = []
+    x0 = x_min + c * col_width
+    x1 = x0 + col_width
+    cx = x_min + col_width / 2 + c * col_width
+    for r in range(N_rows_s):
+        cy = y_start + row_height / 2 + r * row_height
+        col_cells.append({
+            'x0': cx - R_s, 'x1': cx + R_s,
+            'y0': cy - R_s, 'y1': cy + R_s,
+            'used': False
+        })
+    west_circles.append(col_cells)
+
+for r in range(N_rows_s):
+    c = 0
+    while c < 4:
+        if not west_circles[c][r]['used'] and not west_circles[c+1][r]['used']:
+            if random.random() < 0.4:
+                cx0_s = west_circles[c][r]['x0'] + margin_val
+                cx1_s = west_circles[c+1][r]['x1'] - margin_val
+                cy0_s = west_circles[c][r]['y0'] + margin_val
+                cy1_s = west_circles[c][r]['y1'] - margin_val
+                add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+                west_circles[c][r]['used'] = True
+                west_circles[c+1][r]['used'] = True
+                c += 2
+                continue
+        c += 1
+
+for c in range(5):
+    if not west_circles[c][0]['used'] and not west_circles[c][1]['used']:
+        if random.random() < 0.4:
+            cx0_s = west_circles[c][0]['x0'] + margin_val
+            cx1_s = west_circles[c][0]['x1'] - margin_val
+            cy0_s = west_circles[c][0]['y0'] + margin_val
+            cy1_s = west_circles[c][1]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+            west_circles[c][0]['used'] = True
+            west_circles[c][1]['used'] = True
+
+for c in range(5):
+    for r in range(N_rows_s):
+        if not west_circles[c][r]['used']:
+            cx0_s = west_circles[c][r]['x0'] + margin_val
+            cx1_s = west_circles[c][r]['x1'] - margin_val
+            cy0_s = west_circles[c][r]['y0'] + margin_val
+            cy1_s = west_circles[c][r]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+
+# West part columns 5 and 6 (rectangles)
+west_rects = []
+for c_idx, c in enumerate([5, 6]):
+    col_cells = []
+    x0 = x_min + c * col_width
+    x1 = x0 + col_width
+    for r in range(N_rows_s):
+        y0 = y_start + r * row_height
+        y1 = y0 + row_height
+        col_cells.append({
+            'x0': x0, 'x1': x1,
+            'y0': y0, 'y1': y1,
+            'used': False
+        })
+    west_rects.append(col_cells)
+
+for r in range(N_rows_s):
+    if random.random() < 0.4:
+        cx0_s = west_rects[0][r]['x0'] + margin_val
+        cx1_s = west_rects[1][r]['x1'] - margin_val
+        cy0_s = west_rects[0][r]['y0'] + margin_val
+        cy1_s = west_rects[0][r]['y1'] - margin_val
+        add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+        west_rects[0][r]['used'] = True
+        west_rects[1][r]['used'] = True
+
+for c in range(2):
+    if not west_rects[c][0]['used'] and not west_rects[c][1]['used']:
+        if random.random() < 0.4:
+            cx0_s = west_rects[c][0]['x0'] + margin_val
+            cx1_s = west_rects[c][0]['x1'] - margin_val
+            cy0_s = west_rects[c][0]['y0'] + margin_val
+            cy1_s = west_rects[c][1]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+            west_rects[c][0]['used'] = True
+            west_rects[c][1]['used'] = True
+
+for c in range(2):
+    for r in range(N_rows_s):
+        if not west_rects[c][r]['used']:
+            cx0_s = west_rects[c][r]['x0'] + margin_val
+            cx1_s = west_rects[c][r]['x1'] - margin_val
+            cy0_s = west_rects[c][r]['y0'] + margin_val
+            cy1_s = west_rects[c][r]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+
+# West part columns 7 and 8 (4x4 small cells)
+sub_w = col_width / 2
+sub_h = row_height / 2
+small_grid = []
+for sc_idx in range(4):
+    col_cells = []
+    c = 7 + (sc_idx // 2)
+    sc = sc_idx % 2
+    x0_block = x_min + c * col_width
+    sx0 = x0_block + sc * sub_w
+    sx1 = sx0 + sub_w
+    for sr_idx in range(4):
+        r = sr_idx // 2
+        sr = sr_idx % 2
+        y0_block = y_start + r * row_height
+        sy0 = y0_block + sr * sub_h
+        sy1 = sy0 + sub_h
+        col_cells.append({
+            'x0': sx0, 'x1': sx1,
+            'y0': sy0, 'y1': sy1,
+            'used': False
+        })
+    small_grid.append(col_cells)
+
+for r in range(4):
+    c = 0
+    while c < 3:
+        if not small_grid[c][r]['used'] and not small_grid[c+1][r]['used']:
+            if random.random() < 0.4:
+                cx0_s = small_grid[c][r]['x0'] + margin_val
+                cx1_s = small_grid[c+1][r]['x1'] - margin_val
+                cy0_s = small_grid[c][r]['y0'] + margin_val
+                cy1_s = small_grid[c][r]['y1'] - margin_val
+                add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+                small_grid[c][r]['used'] = True
+                small_grid[c+1][r]['used'] = True
+                c += 2
+                continue
+        c += 1
+
+for c in range(4):
+    r = 0
+    while r < 3:
+        if not small_grid[c][r]['used'] and not small_grid[c][r+1]['used']:
+            if random.random() < 0.4:
+                cx0_s = small_grid[c][r]['x0'] + margin_val
+                cx1_s = small_grid[c][r]['x1'] - margin_val
+                cy0_s = small_grid[c][r]['y0'] + margin_val
+                cy1_s = small_grid[c][r+1]['y1'] - margin_val
+                add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+                small_grid[c][r]['used'] = True
+                small_grid[c][r+1]['used'] = True
+                r += 2
+                continue
+        r += 1
+
+for c in range(4):
+    for r in range(4):
+        if not small_grid[c][r]['used']:
+            cx0_s = small_grid[c][r]['x0'] + margin_val
+            cx1_s = small_grid[c][r]['x1'] - margin_val
+            cy0_s = small_grid[c][r]['y0'] + margin_val
+            cy1_s = small_grid[c][r]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+
+# East part: 2 columns and 4 rows (8 long strips)
 x_min_h = 4410
 x_max_h = 8092
 N_cols = 2
@@ -233,13 +420,53 @@ N_rows = 4
 width_col = (x_max_h - x_min_h) / N_cols
 height_row = (y_end - y_start) / N_rows
 
+east_grid = []
 for c in range(N_cols):
+    col_cells = []
     col_x0 = x_min_h + c * width_col
     col_x1 = col_x0 + width_col
     for r in range(N_rows):
-        row_y0 = y_start + r * height_row
-        row_y1 = row_y0 + height_row
-        rect(col_x0, row_y0, col_x1, row_y1, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
+        col_cells.append({
+            'x0': col_x0, 'x1': col_x1,
+            'y0': y_start + r * height_row, 'y1': y_start + (r + 1) * height_row,
+            'used': False
+        })
+    east_grid.append(col_cells)
+
+for r in range(N_rows):
+    if random.random() < 0.4:
+        cx0_s = east_grid[0][r]['x0'] + margin_val
+        cx1_s = east_grid[1][r]['x1'] - margin_val
+        cy0_s = east_grid[0][r]['y0'] + margin_val
+        cy1_s = east_grid[0][r]['y1'] - margin_val
+        add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+        east_grid[0][r]['used'] = True
+        east_grid[1][r]['used'] = True
+
+for c in range(N_cols):
+    r = 0
+    while r < N_rows - 1:
+        if not east_grid[c][r]['used'] and not east_grid[c][r+1]['used']:
+            if random.random() < 0.4:
+                cx0_s = east_grid[c][r]['x0'] + margin_val
+                cx1_s = east_grid[c][r]['x1'] - margin_val
+                cy0_s = east_grid[c][r]['y0'] + margin_val
+                cy1_s = east_grid[c][r+1]['y1'] - margin_val
+                add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
+                east_grid[c][r]['used'] = True
+                east_grid[c][r+1]['used'] = True
+                r += 2
+                continue
+        r += 1
+
+for c in range(N_cols):
+    for r in range(N_rows):
+        if not east_grid[c][r]['used']:
+            cx0_s = east_grid[c][r]['x0'] + margin_val
+            cx1_s = east_grid[c][r]['x1'] - margin_val
+            cy0_s = east_grid[c][r]['y0'] + margin_val
+            cy1_s = east_grid[c][r]['y1'] - margin_val
+            add_farmland_way(cx0_s, cy0_s, cx1_s, cy1_s)
 
 # Southeast circular fields
 for col, row in [(3, 5), (4, 5), (5, 5), (6, 5)]:
@@ -467,8 +694,6 @@ yards = [
     (m(2.35), m(7) - TH_P/2 - m(0.3), m(2.65), m(7) - TH_P/2),                         # Yard 2: Square (0.3x0.3 mi), centered along y=7, block x ∈ [2, 3]
     (m(4.4), m(7) - TH_P/2 - m(0.2), m(4.6), m(7) - TH_P/2),                           # Yard 3: Square (0.2x0.2 mi), centered along y=7, block x ∈ [4, 5]
     (m(6.35), m(7) - TH_P/2 - m(0.3), m(6.65), m(7) - TH_P/2),                         # Yard 4: Square (0.3x0.3 mi), centered along y=7, block x ∈ [6, 7]
-    (m(1) + TH_P/2, m(4.4), m(1) + TH_P/2 + m(0.2), m(4.6)),                           # Yard 5: Square (0.2x0.2 mi), centered along x=1, block y ∈ [4, 5]
-    (m(7) - TH_P/2 - m(0.5), m(4.25), m(7) - TH_P/2, m(4.75)),                           # New Yard: Square (0.5x0.5 mi), centered along x=7 (East primary road), block y ∈ [4, 5]
     (3846, 7380, 4346, 7880)                                                           # Southern Yard: 500x500px in the middle of southern zone
 ]
 

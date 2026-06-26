@@ -213,8 +213,6 @@ def main():
         (2406.0 + offset_m, 6850.0 + offset_m, 2714.0 + offset_m, 7157.0 + offset_m, "Yard 2 (SW)"),
         (4506.0 + offset_m, 6952.0 + offset_m, 4710.0 + offset_m, 7157.0 + offset_m, "Yard 3 (S)"),
         (6502.0 + offset_m, 6850.0 + offset_m, 6810.0 + offset_m, 7157.0 + offset_m, "Yard 4 (SE)"),
-        (1035.0 + offset_m, 4506.0 + offset_m, 1240.0 + offset_m, 4710.0 + offset_m, "Yard 5 (W)"),
-        (6645.0 + offset_m, 4352.0 + offset_m, 7157.0 + offset_m, 4864.0 + offset_m, "Yard 6 (E)"),
         (3846.0 + offset_m, 7380.0 + offset_m, 4346.0 + offset_m, 7880.0 + offset_m, "Yard 7 (Southern)"),
         (1664.0 + offset_m, 1024.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Farmyard")
     ]
@@ -290,8 +288,6 @@ def main():
         (2406.0 + offset_m, 6850.0 + offset_m, 2714.0 + offset_m, 7157.0 + offset_m, "Yard 2 (SW)"),
         (4506.0 + offset_m, 6952.0 + offset_m, 4710.0 + offset_m, 7157.0 + offset_m, "Yard 3 (S)"),
         (6502.0 + offset_m, 6850.0 + offset_m, 6810.0 + offset_m, 7157.0 + offset_m, "Yard 4 (SE)"),
-        (1035.0 + offset_m, 4506.0 + offset_m, 1240.0 + offset_m, 4710.0 + offset_m, "Yard 5 (W)"),
-        (6645.0 + offset_m, 4352.0 + offset_m, 7157.0 + offset_m, 4864.0 + offset_m, "Yard 6 (E)"),
         (3846.0 + offset_m, 7380.0 + offset_m, 4346.0 + offset_m, 7880.0 + offset_m, "Yard 7 (Southern)")
     ]
     
