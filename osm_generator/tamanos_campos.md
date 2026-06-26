@@ -147,11 +147,11 @@ Este documento detalla la lista de todos los campos de cultivo (farmlands) gener
 | 134 | Rectángulo | 896.00 m x 980.00 m | 87.8080 ha |
 | 135 | Rectángulo | 896.00 m x 980.00 m | 87.8080 ha |
 | 136 | Rectángulo | 896.00 m x 973.00 m | 87.1808 ha |
-| 137 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 138 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 139 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 140 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 141 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
+| 137 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 138 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 139 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 140 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 141 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
 | 142 | Rectángulo | 397.10 m x 388.00 m | 15.4079 ha |
 | 143 | Rectángulo | 397.10 m x 388.00 m | 15.4079 ha |
 | 144 | Rectángulo | 192.50 m x 188.00 m | 3.6200 ha |
@@ -162,11 +162,11 @@ Este documento detalla la lista de todos los campos de cultivo (farmlands) gener
 | 149 | Rectángulo | 192.60 m x 188.00 m | 3.6200 ha |
 | 150 | Rectángulo | 192.50 m x 188.00 m | 3.6200 ha |
 | 151 | Rectángulo | 192.60 m x 188.00 m | 3.6200 ha |
-| 152 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 153 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 154 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 155 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
-| 156 | Círculo | Diámetro: 380.00 m | 11.2684 ha |
+| 152 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 153 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 154 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 155 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
+| 156 | Cuadrado | 368.00 m x 368.00 m | 13.5424 ha |
 | 157 | Rectángulo | 397.10 m x 388.00 m | 15.4079 ha |
 | 158 | Rectángulo | 397.10 m x 388.00 m | 15.4079 ha |
 | 159 | Rectángulo | 192.50 m x 188.00 m | 3.6200 ha |
@@ -185,10 +185,10 @@ Este documento detalla la lista de todos los campos de cultivo (farmlands) gener
 | 172 | Rectángulo | 1829.00 m x 188.00 m | 34.3852 ha |
 | 173 | Rectángulo | 1829.00 m x 188.00 m | 34.3852 ha |
 | 174 | Rectángulo | 1829.00 m x 188.00 m | 34.3852 ha |
-| 175 | Círculo | Diámetro: 944.00 m | 69.5408 ha |
-| 176 | Círculo | Diámetro: 944.00 m | 69.5408 ha |
-| 177 | Círculo | Diámetro: 944.00 m | 69.5408 ha |
-| 178 | Círculo | Diámetro: 944.00 m | 69.5408 ha |
+| 175 | Cuadrado | 932.00 m x 932.00 m | 86.8624 ha |
+| 176 | Cuadrado | 932.00 m x 932.00 m | 86.8624 ha |
+| 177 | Cuadrado | 932.00 m x 932.00 m | 86.8624 ha |
+| 178 | Cuadrado | 932.00 m x 932.00 m | 86.8624 ha |
 
 ## Detalle de Farmyards (Granjas/Corrales)
 
@@ -214,11 +214,11 @@ Este documento detalla la lista de todos los campos de cultivo (farmlands) gener
 ## Estadísticas de los Campos y Zonas
 
 - **Total de campos de cultivo:** 178
-  - Cuadrado: 2
-  - Círculo: 14
+  - Cuadrado: 16
+  - Círculo: 0
   - Irregular: 20
   - Rectángulo: 142
-- **Área total cultivable:** 5010.62 ha
+- **Área total cultivable:** 5102.65 ha
 
 - **Total de Farmyards (Granjas/Corrales):** 8
   - Cuadrado: 7

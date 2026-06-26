@@ -32,7 +32,7 @@ def crosses_diagonal_forest(x0, y0, x1, y1):
     y_end = min(y1, m(7))
     for y in [y_start, (y_start + y_end)/2, y_end]:
         rx = get_road_x(y)
-        if x0 - 350 <= rx <= x1 + 350:
+        if x0 - 1300 <= rx <= x1 + 1300:
             return True
     return False
 
@@ -211,7 +211,7 @@ for r in range(N_rows_s):
         x1 = x0 + col_width
         cx = x_min + col_width / 2 + c * col_width
         if c < 5:
-            d.ellipse([cx - R_s, cy - R_s, cx + R_s, cy + R_s], fill=C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
+            rect(cx - R_s, cy - R_s, cx + R_s, cy + R_s, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
         elif c in [5, 6]:
             rect(x0, y0, x1, y1, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
         else:
@@ -246,7 +246,7 @@ for col, row in [(3, 5), (4, 5), (5, 5), (6, 5)]:
     cx = col * 1024 + 512
     cy = row * 1024 + 512
     R = 472
-    d.ellipse([cx - R, cy - R, cx + R, cy + R], fill=C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
+    rect(cx - R, cy - R, cx + R, cy + R, C_FARM, outline=C_FARMB, width=W_FIELD_BORDER)
 
 
 
@@ -321,19 +321,31 @@ road_pts.append((m(1), m(7)))
 # ================= ROAD WIDTHS AND HELPERS =================
 # TH_P, TH_S, TH_T defined at the top of the file
 
-def hline_outline(y,th):
-    rect(0,y-th/2-W_ROAD_BORDER,S,y+th/2+W_ROAD_BORDER,C_FARMB)
+def find_intersection_y(target_x):
+    low = m(1)
+    high = m(7)
+    for _ in range(20):
+        mid = (low + high) / 2
+        x = get_road_x(mid)
+        if x > target_x:
+            low = mid
+        else:
+            high = mid
+    if abs(mid - m(1)) < 1.0:
+        return m(1)
+    if abs(mid - m(7)) < 1.0:
+        return m(7)
+    return mid
 
-def vline_outline(x,th):
-    y_start = m(1) if th == TH_T else m(1) - W_ROAD_BORDER
-    rect(x-th/2-W_ROAD_BORDER,y_start-W_ROAD_BORDER,x+th/2+W_ROAD_BORDER,m(7)+W_ROAD_BORDER,C_FARMB)
+def draw_hline_segment(x_start, x_end, y, th, col, is_outline=False):
+    border = W_ROAD_BORDER if is_outline else 0
+    c = C_FARMB if is_outline else col
+    rect(x_start, y - th/2 - border, x_end, y + th/2 + border, c)
 
-def hline_fill(y,th,col):
-    rect(0,y-th/2,S,y+th/2,col)
-
-def vline_fill(x,th,col):
-    y_start = m(1) if th == TH_T else m(1)
-    rect(x-th/2,y_start,x+th/2,m(7),col)
+def draw_vline_segment(x, y_start, y_end, th, col, is_outline=False):
+    border = W_ROAD_BORDER if is_outline else 0
+    c = C_FARMB if is_outline else col
+    rect(x - th/2 - border, y_start - border, x + th/2 + border, y_end + border, c)
 
 # Set up road coordinates
 hlines = [m(i) for i in range(MILES+1)]
@@ -343,21 +355,37 @@ sec_v = set()  # No secondary vertical roads
 # 1. Draw all road outlines/margins first
 for k, y in enumerate(hlines):
     if k == 0 or k == MILES: continue  # No road on the outer borders
-    elif k == 1 or k == 7: hline_outline(y, TH_P)
-    else: hline_outline(y, TH_T)
+    if k == 1 or k == 7: 
+        draw_hline_segment(0, S, y, TH_P, None, is_outline=True)
+    else: 
+        # Track road (cut diagonal forest)
+        xc = get_road_x(y)
+        x_L = xc - 1300.0
+        x_R = xc + 1300.0
+        if x_L > 0:
+            draw_hline_segment(0, x_L, y, TH_T, None, is_outline=True)
+        if x_R < S:
+            draw_hline_segment(x_R, S, y, TH_T, None, is_outline=True)
 
 for k, x in enumerate(vlines):
     if k == 0 or k == MILES: continue
-    elif k in sec_v: vline_outline(x, TH_S)
-    else: vline_outline(x, TH_T)
+    # All vertical roads are track roads, cut around diagonal forest
+    y_enter = 1024.0 if (x + 1300.0 > 7168.0) else find_intersection_y(x + 1300.0)
+    y_exit = 7168.0 if (x - 1300.0 < 1024.0) else find_intersection_y(x - 1300.0)
+    if y_enter > 1024.0:
+        draw_vline_segment(x, 1024.0, y_enter, TH_T, None, is_outline=True)
+    if y_exit < 7168.0:
+        draw_vline_segment(x, y_exit, 7168.0, TH_T, None, is_outline=True)
 
 # Draw diagonal primary road outline
 d.line(road_pts, fill=C_FARMB, width=TH_P + 2*W_ROAD_BORDER, joint="round")
 
 
-# Draw southern track road outlines
-d.line([(4096, 7168), (4096, 8040)], fill=C_FARMB, width=TH_T + 2*W_ROAD_BORDER, joint="round")
-d.line([(100, 8040), (8092, 8040)], fill=C_FARMB, width=TH_T + 2*W_ROAD_BORDER, joint="round")
+# Draw southern track road outlines (cut around southern forest: x in [3782, 4410], y in [7168, 8092])
+# south_vertical_track is entirely inside/close to the forest, so it is removed.
+# south_horizontal_track is cut 50m from the forest (margin at 3732 and 4460)
+d.line([(100, 8040), (3732, 8040)], fill=C_FARMB, width=TH_T + 2*W_ROAD_BORDER, joint="round")
+d.line([(4460, 8040), (8092, 8040)], fill=C_FARMB, width=TH_T + 2*W_ROAD_BORDER, joint="round")
 
 
 # ================= TOWN (1x1 mile Section, rectangular hugging the north-west) =================
@@ -387,23 +415,44 @@ for i in range(1, 4):
 # Forest 2: Western half of section [2, 3] x [1, 2], pegged to x=2 (next to town farmyard)
 rect(m(2.0), m(1.0), m(2.25), m(2.0), C_FOREST)
 
-# New forest surrounding diagonal road with 50m (32px) black margin and curved boundaries
-margin_pts = []
-forest_pts = []
-for y_px in range(int(m(1)), int(m(7)) + 1, 4):
-    xc = get_road_x(y_px)
-    margin_pts.append((min(S - 100.0, xc + 350.0), y_px))
-    forest_pts.append((min(S - 100.0, xc + 318.0), y_px))
+# 10 separate sections of the diagonal forest (covering 1000m wide hills) with 50m margins
+forest_sections = [
+    (1024.0, 1324.0), # size: 300m
+    (1329.0, 1829.0), # size: 500m
+    (1834.0, 2584.0), # size: 750m
+    (2589.0, 3489.0), # size: 900m
+    (3494.0, 3844.0), # size: 350m
+    (3849.0, 4449.0), # size: 600m
+    (4454.0, 5254.0), # size: 800m
+    (5259.0, 5709.0), # size: 450m
+    (5714.0, 6364.0), # size: 650m
+    (6369.0, 7168.0)  # size: 799m
+]
 
-for y_px in range(int(m(7)), int(m(1)) - 1, -4):
-    xc = get_road_x(y_px)
-    margin_pts.append((max(100.0, xc - 350.0), y_px))
-    forest_pts.append((max(100.0, xc - 318.0), y_px))
-
-# Draw black margin first
-d.polygon(margin_pts, fill=C_FARMB)
-# Draw forest on top
-d.polygon(forest_pts, fill=C_FOREST)
+for idx, (y0, y1) in enumerate(forest_sections):
+    margin_pts = []
+    forest_pts = []
+    
+    # Margin polygon (y extended by 50m for end margins)
+    for y_px in range(int(y0 - 50.0), int(y1 + 50.0) + 1, 4):
+        xc = get_road_x(y_px)
+        margin_pts.append((min(S - 100.0, xc + 1300.0), y_px))
+    for y_px in range(int(y1 + 50.0), int(y0 - 50.0) - 1, -4):
+        xc = get_road_x(y_px)
+        margin_pts.append((max(100.0, xc - 1300.0), y_px))
+        
+    # Forest polygon
+    for y_px in range(int(y0), int(y1) + 1, 4):
+        xc = get_road_x(y_px)
+        forest_pts.append((min(S - 100.0, xc + 1250.0), y_px))
+    for y_px in range(int(y1), int(y0) - 1, -4):
+        xc = get_road_x(y_px)
+        forest_pts.append((max(100.0, xc - 1250.0), y_px))
+        
+    # Draw black margin first
+    d.polygon(margin_pts, fill=C_FARMB)
+    # Draw forest on top
+    d.polygon(forest_pts, fill=C_FOREST)
 
 # Southern forest surrounding the farmyard, reaching both edges (north to south)
 rect(3782, 7168, 4410, 8092, C_FOREST)
@@ -452,21 +501,37 @@ for (x0, y0, x1, y1) in ind_spots:
 # 2. Draw all road fills on top
 for k, y in enumerate(hlines):
     if k == 0 or k == MILES: continue
-    elif k == 1 or k == 7: hline_fill(y, TH_P, C_ROADP)
-    else: hline_fill(y, TH_T, C_ROADT)
+    if k == 1 or k == 7: 
+        draw_hline_segment(0, S, y, TH_P, C_ROADP)
+    else: 
+        # Track road (cut diagonal forest)
+        xc = get_road_x(y)
+        x_L = xc - 1255.0
+        x_R = xc + 1255.0
+        if x_L > 0:
+            draw_hline_segment(0, x_L, y, TH_T, C_ROADT)
+        if x_R < S:
+            draw_hline_segment(x_R, S, y, TH_T, C_ROADT)
 
 for k, x in enumerate(vlines):
     if k == 0 or k == MILES: continue
-    elif k in sec_v: vline_fill(x, TH_S, C_ROADS)
-    else: vline_fill(x, TH_T, C_ROADT)
+    # All vertical roads are track roads, cut around diagonal forest
+    y_enter = 1024.0 if (x + 1255.0 > 7168.0) else find_intersection_y(x + 1255.0)
+    y_exit = 7168.0 if (x - 1255.0 < 1024.0) else find_intersection_y(x - 1255.0)
+    if y_enter > 1024.0:
+        draw_vline_segment(x, 1024.0, y_enter, TH_T, C_ROADT)
+    if y_exit < 7168.0:
+        draw_vline_segment(x, y_exit, 7168.0, TH_T, C_ROADT)
 
 # Draw diagonal primary road fill
 d.line(road_pts, fill=C_ROADP, width=TH_P, joint="round")
 
 
 # Draw southern track road fills
-d.line([(4096, 7168), (4096, 8040)], fill=C_ROADT, width=TH_T, joint="round")
-d.line([(100, 8040), (8092, 8040)], fill=C_ROADT, width=TH_T, joint="round")
+# south_vertical_track is removed.
+# south_horizontal_track is cut 5m from the forest (margin at 3777 and 4415)
+d.line([(100, 8040), (3777, 8040)], fill=C_ROADT, width=TH_T, joint="round")
+d.line([(4415, 8040), (8092, 8040)], fill=C_ROADT, width=TH_T, joint="round")
 
 
 # Paint the 100m border solid black (unassigned area)

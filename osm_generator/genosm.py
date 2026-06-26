@@ -35,7 +35,7 @@ def crosses_diagonal_forest(x0, y0, x1, y1):
     y_end = min(y1, m(7))
     for y in [y_start, (y_start + y_end)/2, y_end]:
         rx = get_road_x(y)
-        if x0 - 350 <= rx <= x1 + 350:
+        if x0 - 1255 <= rx <= x1 + 1255:
             return True
     return False
 
@@ -239,8 +239,8 @@ for i in range(num_forest_steps):
     y1 = m(1.0 + (i + 1) * (6.0 / num_forest_steps))
     ym = (y0 + y1) / 2
     xc = get_road_x(ym)
-    x0 = max(100.0, xc - 350.0)
-    x1 = min(S - 100.0, xc + 350.0)
+    x0 = max(100.0, xc - 1255.0)
+    x1 = min(S - 100.0, xc + 1255.0)
     diag_forests.append((x0, y0, x1, y1))
 
 def find_intersection_y(target_x):
@@ -253,6 +253,11 @@ def find_intersection_y(target_x):
             low = mid
         else:
             high = mid
+    # Clean up boundary cases to avoid duplicate nodes at intersections
+    if abs(mid - m(1)) < 1.0:
+        return m(1)
+    if abs(mid - m(7)) < 1.0:
+        return m(7)
     return mid
 
 def get_diag_spot(y_c, side):
@@ -394,7 +399,7 @@ for p in parcels:
             add_way(ns, {'landuse': 'farmland'})
             continue
             
-        # Clip the shrunk rectangle with the diagonal forest (350px margin from road center)
+        # Clip the shrunk rectangle with the diagonal forest (1255px margin from road center to cover 1000m hills + 5m gap)
         # Sample every 16px along the y range to get a smooth curve
         y_vals = []
         y_curr = cy0_s
@@ -406,8 +411,8 @@ for p in parcels:
         has_left = False
         has_right = False
         for y_val in y_vals:
-            L_y = get_road_x(y_val) - 350.0
-            R_y = get_road_x(y_val) + 350.0
+            L_y = get_road_x(y_val) - 1255.0
+            R_y = get_road_x(y_val) + 1255.0
             if cx0_s < L_y:
                 has_left = True
             if cx1_s > R_y:
@@ -415,13 +420,13 @@ for p in parcels:
                 
         # Generate left polygon nodes
         if has_left:
-            valid_y_vals = [y for y in y_vals if get_road_x(y) - 350.0 > cx0_s]
+            valid_y_vals = [y for y in y_vals if get_road_x(y) - 1255.0 > cx0_s]
             if len(valid_y_vals) >= 2:
                 y_start = valid_y_vals[0]
                 y_end = valid_y_vals[-1]
                 pts = [(cx0_s, y_start), (cx0_s, y_end)]
                 for y_val in reversed(valid_y_vals):
-                    L_y = get_road_x(y_val) - 350.0
+                    L_y = get_road_x(y_val) - 1255.0
                     px = max(cx0_s, min(cx1_s, L_y))
                     if pts[-1] != (px, y_val):
                         pts.append((px, y_val))
@@ -438,13 +443,13 @@ for p in parcels:
                         
         # Generate right polygon nodes
         if has_right:
-            valid_y_vals = [y for y in y_vals if get_road_x(y) + 350.0 < cx1_s]
+            valid_y_vals = [y for y in y_vals if get_road_x(y) + 1255.0 < cx1_s]
             if len(valid_y_vals) >= 2:
                 y_start = valid_y_vals[0]
                 y_end = valid_y_vals[-1]
                 pts = [(cx1_s, y_start)]
                 for y_val in valid_y_vals:
-                    R_y = get_road_x(y_val) + 350.0
+                    R_y = get_road_x(y_val) + 1255.0
                     px = max(cx0_s, min(cx1_s, R_y))
                     if pts[-1] != (px, y_val):
                         pts.append((px, y_val))
@@ -485,14 +490,18 @@ for r in range(N_rows_s):
         cx = x_min + col_width / 2 + c * col_width
         
         if c < 5:
-            # Circle approximation
-            pts = []
-            for k in range(32):
-                theta = k * 2 * math.pi / 32
-                x = cx + R_s * math.cos(theta)
-                y = cy + R_s * math.sin(theta)
-                pts.append((x, y))
-            ns = [create_unique_node(x, y) for (x, y) in pts]
+            # Square farmland replacing circle approximation
+            cx0_s = cx - R_s + margin
+            cx1_s = cx + R_s - margin
+            cy0_s = cy - R_s + margin
+            cy1_s = cy + R_s - margin
+            
+            ns = [
+                create_unique_node(cx0_s, cy0_s),
+                create_unique_node(cx1_s, cy0_s),
+                create_unique_node(cx1_s, cy1_s),
+                create_unique_node(cx0_s, cy1_s),
+            ]
             ns.append(ns[0])
             add_way(ns, {'landuse': 'farmland'})
         elif c in [5, 6]:
@@ -568,14 +577,16 @@ for col, row in [(3, 5), (4, 5), (5, 5), (6, 5)]:
     cx = col * 1024 + 512
     cy = row * 1024 + 512
     R = 472
-    pts = []
-    # Generate circle approximation (32 nodes)
-    for k in range(32):
-        theta = k * 2 * math.pi / 32
-        x = cx + R * math.cos(theta)
-        y = cy + R * math.sin(theta)
-        pts.append((x, y))
-    ns = [create_unique_node(x, y) for (x, y) in pts]
+    cx0_s = cx - R + margin
+    cx1_s = cx + R - margin
+    cy0_s = cy - R + margin
+    cy1_s = cy + R - margin
+    ns = [
+        create_unique_node(cx0_s, cy0_s),
+        create_unique_node(cx1_s, cy0_s),
+        create_unique_node(cx1_s, cy1_s),
+        create_unique_node(cx0_s, cy1_s),
+    ]
     ns.append(ns[0])
     add_way(ns, {'landuse': 'farmland'})
 
@@ -620,25 +631,51 @@ for (x0, y0, x1, y1) in forests:
     ns.append(ns[0])
     add_way(ns, {'landuse': 'farmyard', 'natural': 'wood', 'leaf_type': 'broadleaf'})
 
-# Single curved forest polygon for OSM (1 km wide = 318px half-width)
-forest_nodes = []
-# Right side: from top to bottom (y = m(1) to m(7))
-for y_px in range(int(m(1)), int(m(7)) + 1, 32):
-    xc = get_road_x(y_px)
-    xr = min(S - 100.0, xc + 318.0)
-    forest_nodes.append(create_unique_node(xr, y_px))
+# 10 separate sections of the diagonal forest (covering 1000m wide hills)
+forest_sections = [
+    (1024.0, 1324.0), # size: 300m
+    (1329.0, 1829.0), # size: 500m
+    (1834.0, 2584.0), # size: 750m
+    (2589.0, 3489.0), # size: 900m
+    (3494.0, 3844.0), # size: 350m
+    (3849.0, 4449.0), # size: 600m
+    (4454.0, 5254.0), # size: 800m
+    (5259.0, 5709.0), # size: 450m
+    (5714.0, 6364.0), # size: 650m
+    (6369.0, 7168.0)  # size: 799m
+]
 
-# Left side: from bottom to top (y = m(7) to m(1))
-for y_px in range(int(m(7)), int(m(1)) - 1, -32):
-    xc = get_road_x(y_px)
-    xl = max(100.0, xc - 318.0)
-    forest_nodes.append(create_unique_node(xl, y_px))
-
-# Close the polygon
-forest_nodes.append(forest_nodes[0])
-
-# Add the forest way
-add_way(forest_nodes, {'landuse': 'farmyard', 'natural': 'wood', 'leaf_type': 'broadleaf', 'name': 'Bosque de la Diagonal'})
+for idx, (y0, y1) in enumerate(forest_sections):
+    forest_nodes = []
+    
+    # Right side: from top to bottom
+    y_right = list(range(int(y0), int(y1) + 1, 32))
+    if y_right[-1] != int(y1):
+        y_right.append(int(y1))
+    for y_px in y_right:
+        xc = get_road_x(y_px)
+        xr = min(S - 100.0, xc + 1250.0)
+        forest_nodes.append(create_unique_node(xr, y_px))
+        
+    # Left side: from bottom to top
+    y_left = list(range(int(y1), int(y0) - 1, -32))
+    if y_left[-1] != int(y0):
+        y_left.append(int(y0))
+    for y_px in y_left:
+        xc = get_road_x(y_px)
+        xl = max(100.0, xc - 1250.0)
+        forest_nodes.append(create_unique_node(xl, y_px))
+        
+    # Close the polygon
+    forest_nodes.append(forest_nodes[0])
+    
+    # Add the forest way
+    add_way(forest_nodes, {
+        'landuse': 'farmyard',
+        'natural': 'wood',
+        'leaf_type': 'broadleaf',
+        'name': f'Bosque de la Diagonal - Sección {idx+1}'
+    })
 
 # Lake and railway tracks removed
 
@@ -674,59 +711,83 @@ for (x0, y0, x1, y1) in ind_spots:
 # Horizontal roads
 for k in range(1, MILES):
     y = m(k)
-    highway_tag = 'primary' if (k == 1 or k == 7) else 'track'
-    # Start with grid nodes
-    coords = [m(i) for i in range(MILES+1)]
-    # Insert diagonal road intersection
-    x_int = get_road_x(y)
-    coords.append(x_int)
-    coords.sort()
-    ns = [get_node(x, y) for x in coords]
-    add_way(ns, {'highway': highway_tag})
-
+    if k == 1 or k == 7:
+        # Primary roads cross the forest: keep as a single way, but clean duplicates
+        coords = sorted(list(set([m(i) for i in range(MILES+1)] + [get_road_x(y)])))
+        ns = [get_node(x, y) for x in coords]
+        add_way(ns, {'highway': 'primary'})
+    else:
+        # Track roads (cut diagonal forest)
+        xc = get_road_x(y)
+        x_L = xc - 1255.0
+        x_R = xc + 1255.0
+        coords = [m(i) for i in range(MILES+1)]
+        
+        # Left segment
+        coords_L = sorted(list(set([x for x in coords if x < x_L] + [x_L])))
+        if len(coords_L) >= 2:
+            ns_L = [get_node(x, y) for x in coords_L]
+            add_way(ns_L, {'highway': 'track'})
+            
+        # Right segment
+        coords_R = sorted(list(set([x_R] + [x for x in coords if x > x_R])))
+        if len(coords_R) >= 2:
+            ns_R = [get_node(x, y) for x in coords_R]
+            add_way(ns_R, {'highway': 'track'})
+ 
 # Vertical roads
 for k in range(1, MILES):
     x = m(k)
-    highway_tag = 'track'
+    # All vertical roads are track roads, cut around diagonal forest
+    y_enter = 1024.0 if (x + 1255.0 > 7168.0) else find_intersection_y(x + 1255.0)
+    y_exit = 7168.0 if (x - 1255.0 < 1024.0) else find_intersection_y(x - 1255.0)
     y_coords = [m(j) for j in range(1, 8)]
-    # Find diagonal road intersection
-    y_int = find_intersection_y(x)
-    y_coords.append(y_int)
-    y_coords.sort()
-    ns = [get_node(x, y) for y in y_coords]
-    add_way(ns, {'highway': highway_tag})
-
+    
+    # Top segment
+    y_coords_top = sorted(list(set([y for y in y_coords if y < y_enter] + [y_enter])))
+    if y_enter > 1024.0 and len(y_coords_top) >= 2:
+        ns_top = [get_node(x, y) for y in y_coords_top]
+        add_way(ns_top, {'highway': 'track'})
+        
+    # Bottom segment
+    y_coords_bottom = sorted(list(set([y_exit] + [y for y in y_coords if y > y_exit])))
+    if y_exit < 7168.0 and len(y_coords_bottom) >= 2:
+        ns_bottom = [get_node(x, y) for y in y_coords_bottom]
+        add_way(ns_bottom, {'highway': 'track'})
+ 
 # Diagonal primary road
 diag_pts = []
 for k in range(49):
     y_val = m(1) + k * 128
     x_val = get_road_x(y_val)
     diag_pts.append((x_val, y_val))
-
+ 
 for k in range(1, MILES):
     x_int = m(k)
     y_int = find_intersection_y(x_int)
     diag_pts.append((x_int, y_int))
-
-# Sort points by y coordinate
+ 
+# Sort points by y coordinate and remove duplicates
 diag_pts = sorted(list(set(diag_pts)), key=lambda p: p[1])
 diag_nodes = [get_node(x, y) for (x, y) in diag_pts]
 add_way(diag_nodes, {'highway': 'primary'})
-
-
-
-# Southern track roads
-south_vertical_track = [
-    get_node(4096, 7168),
-    get_node(4096, 8040)
-]
-add_way(south_vertical_track, {'highway': 'track', 'name': 'Camino de Terracería del Sur'})
-
-south_horizontal_track = [
+ 
+ 
+ 
+# Southern track roads (cut around southern forest: x in [3782, 4410], y in [7168, 8092])
+# south_vertical_track is entirely inside/close to the forest, so it is removed.
+# south_horizontal_track is cut 5m from the forest (margin at 3777 and 4415)
+south_horizontal_track_L = [
     get_node(100, 8040),
+    get_node(3777, 8040)
+]
+add_way(south_horizontal_track_L, {'highway': 'track', 'name': 'Camino de Terracería Costero'})
+ 
+south_horizontal_track_R = [
+    get_node(4415, 8040),
     get_node(8092, 8040)
 ]
-add_way(south_horizontal_track, {'highway': 'track', 'name': 'Camino de Terracería Costero'})
+add_way(south_horizontal_track_R, {'highway': 'track', 'name': 'Camino de Terracería Costero'})
 
 
 

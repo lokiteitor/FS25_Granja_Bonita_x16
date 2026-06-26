@@ -19,6 +19,34 @@ def val_noise(shape, grid_size, weight, seed=20260608):
     temp_img = temp_img.resize((shape[1], shape[0]), Image.Resampling.BICUBIC)
     return np.array(temp_img) * weight
 
+def get_road_x_global(y_m, offset_m=2048.0, S_playable=8192.0):
+    """Vectorized calculation of the road center x-coordinate in meters."""
+    y_local = y_m - offset_m
+    y_local = np.clip(y_local, 0.0, S_playable)
+    y_miles = y_local / 1024.0
+    
+    x_miles = np.zeros_like(y_miles)
+    
+    mask1 = y_miles <= 2.2
+    x_miles[mask1] = 7.0
+    
+    mask2 = (y_miles > 2.2) & (y_miles <= 3.8)
+    u2 = (y_miles[mask2] - 2.2) / 1.6
+    x_miles[mask2] = 4.0 + 3.0 * (1.0 + np.cos(np.pi * u2)) / 2.0
+    
+    mask3 = (y_miles > 3.8) & (y_miles <= 4.2)
+    x_miles[mask3] = 4.0
+    
+    mask4 = (y_miles > 4.2) & (y_miles <= 5.8)
+    u4 = (y_miles[mask4] - 4.2) / 1.6
+    x_miles[mask4] = 1.0 + 3.0 * (1.0 + np.cos(np.pi * u4)) / 2.0
+    
+    mask5 = y_miles > 5.8
+    x_miles[mask5] = 1.0
+    
+    x_local = x_miles * 1024.0
+    return x_local + offset_m
+
 def main():
     t_start = time.time()
     print("=== FS25 12K New DEM Generator (Exactly 12288x12288 for 8K Maps) ===")
@@ -109,6 +137,61 @@ def main():
     # Smooth with adjusted sigma to scale with pixel resolution (6m = 9px)
     terrain = gaussian_filter(terrain, sigma=6 * scale_m_to_px)
     
+    # Save a copy of terrain before adding hills to compute clean yard target heights
+    terrain_before_hills = terrain.copy()
+    
+    # 4.1. Generate hills along the road (500m free corridor width, 80m max height, 1000m hill width)
+    print("4.1. Generating hills along the road (500m free width, 1000m hill width, 80m height)...")
+    road_x = get_road_x_global(y_m, offset_m)
+    dist_to_road = np.abs(x_m - road_x)
+    
+    w_hill = 1000.0   # width of the hill band (extended to 1000m each side)
+    d_start = 250.0   # clearance from road center (250m each side = 500m corridor)
+    d_end = d_start + w_hill
+    
+    # Mask where hills are active
+    hill_mask = (dist_to_road >= d_start) & (dist_to_road <= d_end)
+    
+    # Profile S(d) across the road
+    S_d = np.zeros_like(dist_to_road)
+    u_d = (dist_to_road[hill_mask] - d_start) / w_hill
+    S_d[hill_mask] = np.sin(np.pi * u_d) ** 2
+    
+    # Variation P(y) along the road (chain of hills)
+    val_y = (
+        np.sin(y_m / 150.0) * 0.5 + 
+        np.sin(y_m / 350.0) * 0.3 + 
+        np.sin(y_m / 800.0) * 0.2
+    )
+    val_y_min = val_y.min()
+    val_y_max = val_y.max()
+    P_y = (val_y - val_y_min) / (val_y_max - val_y_min)
+    P_y = P_y ** 2
+    
+    # Fade factor near northern/southern playable boundaries
+    w_fade_y = np.zeros_like(y_m)
+    mask_playable = (y_m >= 2048.0) & (y_m <= 10240.0)
+    fade_len = 500.0
+    y_play = y_m[mask_playable]
+    w_play = np.ones_like(y_play)
+    
+    # North boundary fade (2048 to 2048 + fade_len)
+    mask_north = y_play < (2048.0 + fade_len)
+    w_play[mask_north] = (y_play[mask_north] - 2048.0) / fade_len
+    
+    # South boundary fade (10240 - fade_len to 10240)
+    mask_south = y_play > (10240.0 - fade_len)
+    w_play[mask_south] = (10240.0 - y_play[mask_south]) / fade_len
+    
+    w_fade_y[mask_playable] = w_play
+    
+    # Max height is 80 meters (8000.0 raw units)
+    H_max_raw = 80.0 * 100.0
+    hill_heights = H_max_raw * S_d * P_y * w_fade_y
+    
+    # Add hills to terrain
+    terrain = terrain + hill_heights
+    
     print("5. Flattening southern farmyards with extra-gentle transitions...")
     yards_to_flatten_m = [
         (4480.0 + offset_m, 1035.0 + offset_m, 4736.0 + offset_m, 1291.0 + offset_m, "Yard 1 (NE)"),
@@ -129,8 +212,8 @@ def main():
         y0_px = max(0, min(S_px-1, int(y0_m * scale_m_to_px)))
         y1_px = max(0, min(S_px-1, int(y1_m * scale_m_to_px)))
         
-        # Calculate target height
-        sub = terrain[y0_px:y1_px+1, x0_px:x1_px+1]
+        # Calculate target height from the terrain before hills
+        sub = terrain_before_hills[y0_px:y1_px+1, x0_px:x1_px+1]
         H_target = np.median(sub)
         print(f"   Flattening {name} to target height = {H_target:.1f} (margin={margin_m}m)")
         
