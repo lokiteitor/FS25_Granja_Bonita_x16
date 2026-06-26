@@ -185,9 +185,24 @@ def main():
     
     w_fade_y[mask_playable] = w_play
     
+    # Sinuous road y-range weight: 1.0 in sinuous part, fades to 0.0 at vertical parts
+    y_local = np.clip(y_m - offset_m, 0.0, 8192.0)
+    y_miles = y_local / 1024.0
+    w_sinuous_y = np.ones_like(y_miles)
+    
+    # Top transition (fade out from y_miles=2.4 to y_miles=2.2)
+    mask_top_fade = (y_miles >= 2.2) & (y_miles < 2.4)
+    w_sinuous_y[mask_top_fade] = (y_miles[mask_top_fade] - 2.2) / 0.2
+    w_sinuous_y[y_miles < 2.2] = 0.0
+    
+    # Bottom transition (fade out from y_miles=5.6 to y_miles=5.8)
+    mask_bottom_fade = (y_miles > 5.6) & (y_miles <= 5.8)
+    w_sinuous_y[mask_bottom_fade] = (5.8 - y_miles[mask_bottom_fade]) / 0.2
+    w_sinuous_y[y_miles > 5.8] = 0.0
+    
     # Max height is 80 meters (8000.0 raw units)
     H_max_raw = 80.0 * 100.0
-    hill_heights = H_max_raw * S_d * P_y * w_fade_y
+    hill_heights = H_max_raw * S_d * P_y * w_fade_y * w_sinuous_y
     
     # Add hills to terrain
     terrain = terrain + hill_heights
