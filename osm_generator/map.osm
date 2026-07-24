@@ -4648,8 +4648,8 @@
     <nd ref="1408"/>
     <nd ref="1409"/>
     <nd ref="1406"/>
-    <tag k="landuse" v="farmland"/>
-    <tag k="name" v="Field N5_12 (10.0 ha)"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="name" v="Yard N5_12"/>
   </way>
   <way id="250" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
     <nd ref="1410"/>

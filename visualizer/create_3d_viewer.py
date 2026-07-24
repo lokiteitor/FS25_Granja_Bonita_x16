@@ -6,6 +6,9 @@ import xml.etree.ElementTree as ET
 import numpy as np
 from PIL import Image, ImageDraw
 
+# The 12288x12288 DEM is far above Pillow's default decompression-bomb limit.
+Image.MAX_IMAGE_PIXELS = None
+
 def main():
     print("=== DEM 3D Viewer Asset Generator ===")
     
@@ -24,6 +27,11 @@ def main():
     
     # Target size for the web assets (1024x1024 is highly detailed but lightweight enough)
     target_size = 1024
+
+    # Real-world dimensions of the generated terrain (see dem_generator/generate_new_dem_12k.py):
+    # a 12288x12288m canvas at 1px = 1m, with the 8192x8192m playable area centered in it.
+    dem_size_m = 12288
+    playable_size_m = 8192
     
     # 1. Load and process heightmap
     print(f"Loading heightmap {input_path}...")
@@ -58,32 +66,43 @@ def main():
     print(f"Saved RGB heightmap to: {output_rgb_path}")
     
     # 2.5. Parse OSM way coordinates to build polygon mask for texture coloring
-    osm_path = os.path.join(project_root, "osm_generator", "outputs", "zoning_map manual.osm")
-    if not os.path.exists(osm_path):
-        osm_path = os.path.join(project_root, "osm_generator", "outputs", "zoning_map.osm")
-    if not os.path.exists(osm_path):
-        osm_path = os.path.join(current_dir, "map.osm")
-        
+    osm_candidates = [
+        os.path.join(project_root, "osm_generator", "map.osm"),
+        os.path.join(project_root, "osm_generator", "outputs", "zoning_map manual.osm"),
+        os.path.join(project_root, "osm_generator", "outputs", "zoning_map.osm"),
+        os.path.join(current_dir, "map.osm"),
+    ]
+    osm_path = next((p for p in osm_candidates if os.path.exists(p)), None)
+
     ways_data = []
-    if os.path.exists(osm_path):
+    # Bounds of the OSM area; read from the file's <bounds> element (falls back to node extents).
+    min_lat = min_lon = max_lat = max_lon = None
+    if osm_path:
         print(f"Found OSM file at: {osm_path}. Parsing features...")
         try:
             tree = ET.parse(osm_path)
             root = tree.getroot()
-            
+
+            bounds = root.find("bounds")
+            if bounds is not None:
+                min_lat = float(bounds.get("minlat"))
+                max_lat = float(bounds.get("maxlat"))
+                min_lon = float(bounds.get("minlon"))
+                max_lon = float(bounds.get("maxlon"))
+
             nodes = {}
             for node in root.findall("node"):
                 nid = node.get("id")
                 lat = float(node.get("lat"))
                 lon = float(node.get("lon"))
                 nodes[nid] = (lat, lon)
-                
+
             for way in root.findall("way"):
                 wid = way.get("id")
                 tags = {tag.get("k"): tag.get("v") for tag in way.findall("tag")}
                 refs = [nd.get("ref") for nd in way.findall("nd")]
                 coords = [nodes[ref] for ref in refs if ref in nodes]
-                
+
                 if coords:
                     ways_data.append({
                         "id": wid,
@@ -91,11 +110,25 @@ def main():
                         "coords": coords
                     })
             print(f"Parsed {len(ways_data)} ways from OSM.")
+
+            if min_lat is None and nodes:
+                lats = [lat for lat, _ in nodes.values()]
+                lons = [lon for _, lon in nodes.values()]
+                min_lat, max_lat = min(lats), max(lats)
+                min_lon, max_lon = min(lons), max(lons)
+                print("Warning: no <bounds> element, using node extents instead.")
         except Exception as e:
             print(f"Warning: Failed to parse OSM: {e}")
+            ways_data = []
     else:
         print("No OSM file found. Skipping feature overlays.")
-        
+
+    if min_lat is None:
+        # Neutral placeholder so the generated HTML stays valid without OSM data.
+        min_lat, max_lat, min_lon, max_lon = 0.0, 1.0, 0.0, 1.0
+    else:
+        print(f"OSM bounds: lat {min_lat:.6f}..{max_lat:.6f}, lon {min_lon:.6f}..{max_lon:.6f}")
+
     osm_data_json = json.dumps(ways_data)
     
     # Generate the base color image (1024x1024)
@@ -104,94 +137,190 @@ def main():
     base_color_img = Image.new("RGB", (target_size, target_size), bg_color)
     draw = ImageDraw.Draw(base_color_img)
     
+    # Style rules matched against the way tags, in priority order.
+    # (tag_key, tag_value or None for "any", hex color, line width in texture px)
+    # natural=wood is checked before landuse: forests are tagged with both
+    # natural=wood and landuse=farmyard, and the forest reading is the meaningful one.
+    style_rules = [
+        ("natural", "water", "#2563EB", 3),       # Water blue
+        ("water", None, "#2563EB", 3),
+        ("natural", "wood", "#166534", 3),        # Forest green
+        ("landuse", "forest", "#166534", 3),
+        ("landuse", "farmyard", "#EC4899", 3),    # Pink for farmyard
+        ("landuse", "farmland", "#86EFAC", 2),    # Light green for farmland
+        ("railway", None, "#F59E0B", 3),          # Amber railway
+        ("highway", "primary", "#111827", 5),     # Road hierarchy, darkest = biggest
+        ("highway", "secondary", "#374151", 4),
+        ("highway", "tertiary", "#6B7280", 2),
+        ("highway", None, "#9CA3AF", 2),
+    ]
+
+    def hex_to_rgb(hex_str):
+        h = hex_str.lstrip('#')
+        return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+    def match_style(tags):
+        for key, val, hex_color, width in style_rules:
+            if key in tags and (val is None or tags[key] == val):
+                return hex_to_rgb(hex_color), width
+        return None, None
+
+    # Convert lat/lon to pixel coordinates on the 1024x1024 texture.
+    # The DEM covers 12288m but only the central 8192m correspond to the OSM area:
+    #   osm_px = 1024 * (8192/12288) = 682.67px, offset = (1024 - 682.67) / 2 = 170.67px
+    osm_band = target_size * (playable_size_m / dem_size_m)
+    osm_offset = (target_size - osm_band) / 2
+
+    def to_pixels(coords):
+        pts = []
+        for lat, lon in coords:
+            u = (lon - min_lon) / (max_lon - min_lon)
+            v = (max_lat - lat) / (max_lat - min_lat)
+            pts.append((osm_offset + u * osm_band, osm_offset + v * osm_band))
+        return pts
+
     if ways_data:
-        min_lon = 37.715173389134144
-        max_lon = 37.82446513086585
-        min_lat = 47.57967188702157
-        max_lat = 47.653344312978426
-        
-        # Color definitions for tags
-        # (tag_key, tag_value, hex_color)
-        color_rules = [
-            ("natural", "wood", "#22C55E"),      # Forest green
-            ("landuse", "forest", "#22C55E"),
-            ("landuse", "farmyard", "#EC4899"),   # Pink for farmyard
-            ("landuse", "farmland", "#86EFAC"),   # Light green for farmland
-            ("natural", "water", "#2563EB"),     # Water blue
-            ("water", None, "#2563EB"),
-            ("railway", None, "#9CA3AF"),        # Silver/gray railway
-            ("highway", None, "#4B5563"),        # Road gray
-        ]
-        
-        def hex_to_rgb(hex_str):
-            h = hex_str.lstrip('#')
-            return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-            
+        polygons, lines = [], []
         for way in ways_data:
             tags = way.get("tags", {})
             coords = way.get("coords", [])
             if len(coords) < 2:
                 continue
-                
-            # Find matching color rule
-            match_color = None
-            for key, val, hex_color in color_rules:
-                if key in tags:
-                    if val is None or tags[key] == val:
-                        match_color = hex_to_rgb(hex_color)
-                        break
-                        
-            if match_color is None:
+
+            color, width = match_style(tags)
+            if color is None:
                 continue
-                
-            # Convert coords to pixel coordinates on the 1024x1024 texture.
-            # The DEM is 12288px total but only the central 8192px correspond to the OSM area.
-            # Ratio = 8192/12288 = 2/3. In the 1024px texture that central band is:
-            #   osm_px = 1024 * (8192/12288) = 682.67px, offset = (1024 - 682.67) / 2 = 170.67px
-            osm_band = target_size * (8192 / 12288)  # ~682.67px
-            osm_offset = (target_size - osm_band) / 2  # ~170.67px
-            poly_points = []
-            for lat, lon in coords:
-                u = (lon - min_lon) / (max_lon - min_lon)
-                v = (max_lat - lat) / (max_lat - min_lat)
-                px = osm_offset + u * osm_band
-                py = osm_offset + v * osm_band
-                poly_points.append((px, py))
-                
-            # Check if closed way (polygon) or open way (line)
+
+            pts = to_pixels(coords)
             is_closed = len(coords) > 2 and coords[0] == coords[-1]
-            
             if is_closed:
-                draw.polygon(poly_points, fill=match_color)
+                # Shoelace area, used to paint large areas first so small ones stay visible.
+                area = abs(sum(pts[i][0] * pts[i - 1][1] - pts[i - 1][0] * pts[i][1]
+                               for i in range(len(pts)))) / 2.0
+                polygons.append((area, pts, color))
             else:
-                draw.line(poly_points, fill=match_color, width=4)
-                
-    # 3. Generate a beautiful custom terrain texture with shaded relief
-    print("Generating shaded relief terrain texture (OSM colors shaded, rest grayscale)...")
-    try:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        from matplotlib.colors import LightSource
-        
-        # Create shaded relief
-        ls = LightSource(azdeg=315, altdeg=45)
-        # Convert base color image to float [0, 1] array
-        rgb_input = np.array(base_color_img, dtype=np.float32) / 255.0
-        # Apply shading directly on the custom colored image using shade_rgb
-        shaded = ls.shade_rgb(rgb_input, elevation=data_resized / 100.0, blend_mode='overlay', vert_exag=1.5, dx=8.0, dy=8.0)
-        
-        # Convert float [0, 1] to uint8 [0, 255] and save
-        texture_data = (shaded * 255).astype(np.uint8)
-        img_texture = Image.fromarray(texture_data)
-        img_texture.save(output_texture_path)
-        print(f"Saved shaded terrain texture to: {output_texture_path}")
-    except Exception as e:
-        print(f"Warning: Could not generate shaded relief using matplotlib: {e}")
-        # Fallback: just save the base_color_img directly!
-        base_color_img.save(output_texture_path)
-        print(f"Saved fallback flat colored texture to: {output_texture_path}")
-        
+                lines.append((pts, color, width))
+
+        polygons.sort(key=lambda p: p[0], reverse=True)
+        for _, pts, color in polygons:
+            draw.polygon(pts, fill=color)
+        for pts, color, width in lines:
+            draw.line(pts, fill=color, width=width, joint="curve")
+
+        print(f"Painted {len(polygons)} areas and {len(lines)} linear features onto the texture.")
+
+    # Dashed outline of the playable 8192m area, so the border is readable in the texture.
+    border_color = (255, 255, 255)
+    b0, b1 = osm_offset, osm_offset + osm_band
+    for start in range(int(b0), int(b1), 16):
+        end = min(start + 8, b1)
+        draw.line([(start, b0), (end, b0)], fill=border_color, width=2)
+        draw.line([(start, b1), (end, b1)], fill=border_color, width=2)
+        draw.line([(b0, start), (b0, end)], fill=border_color, width=2)
+        draw.line([(b1, start), (b1, end)], fill=border_color, width=2)
+
+
+    # 3. Bake the flat colors into a shaded relief texture
+    def shade_and_save(color_img, path, label):
+        """Applies hillshading from the DEM onto a flat color image and saves it."""
+        try:
+            import matplotlib
+            matplotlib.use('Agg')
+            from matplotlib.colors import LightSource
+
+            ls = LightSource(azdeg=315, altdeg=45)
+            rgb_input = np.array(color_img, dtype=np.float32) / 255.0
+            # dx/dy = metres per texture pixel (12288m / 1024px = 12m)
+            px_m = dem_size_m / target_size
+            shaded = ls.shade_rgb(rgb_input, elevation=data_resized / 100.0, blend_mode='overlay',
+                                  vert_exag=1.5, dx=px_m, dy=px_m)
+            Image.fromarray((shaded * 255).astype(np.uint8)).save(path)
+            print(f"Saved shaded {label} to: {path}")
+        except Exception as e:
+            print(f"Warning: could not shade {label} with matplotlib: {e}")
+            color_img.save(path)
+            print(f"Saved flat (unshaded) {label} to: {path}")
+
+    print("Generating shaded relief terrain texture...")
+    shade_and_save(base_color_img, output_texture_path, "terrain texture")
+
+    # 3.5. Soil type map from Precision Farming (pf_generator/soilMap.png).
+    # The soil map covers the playable area only, so it lands on the same central
+    # band of the canvas as the OSM features.
+    soil_path = os.path.join(project_root, "pf_generator", "soilMap.png")
+    output_soil_texture_path = os.path.join(current_dir, "soil_1024_texture.png")
+    output_soil_index_path = os.path.join(current_dir, "soil_1024_index.png")
+
+    # index -> (spanish name, english name, yield, color); mirrors pf_generator/generate_soil.py
+    soil_types = [
+        {"name": "Arena Limosa", "name_en": "Loamy Sand", "yield": "75%", "color": (220, 185, 80)},
+        {"name": "Franco Arenoso", "name_en": "Sandy Loam", "yield": "100%", "color": (180, 130, 60)},
+        {"name": "Franco", "name_en": "Loam", "yield": "125%", "color": (70, 150, 50)},
+        {"name": "Arcilla Limosa", "name_en": "Silty Clay", "yield": "80%", "color": (120, 70, 160)},
+    ]
+    SOIL_NONE = 255  # marker for "outside the playable area"
+
+    soil_available = False
+    if os.path.exists(soil_path):
+        print(f"Loading soil map {soil_path}...")
+        soil_src = Image.open(soil_path)
+        # P (indexed) and L images already hold the soil index per pixel; converting a
+        # palette image to L would replace the indices with palette luminance.
+        soil_idx_full = np.array(soil_src if soil_src.mode in ("P", "L") else soil_src.convert("L"))
+        print(f"Soil map size: {soil_src.size}, mode: {soil_src.mode}, "
+              f"types present: {sorted(np.unique(soil_idx_full).tolist())}")
+
+        band_px = int(round(osm_band))
+        offset_px = int(round(osm_offset))
+
+        # Nearest neighbour keeps the soil indices intact (no blended in-between values)
+        soil_band = np.array(Image.fromarray(soil_idx_full, mode="L").resize(
+            (band_px, band_px), Image.Resampling.NEAREST))
+
+        soil_index_map = np.full((target_size, target_size), SOIL_NONE, dtype=np.uint8)
+        soil_index_map[offset_px:offset_px + band_px, offset_px:offset_px + band_px] = soil_band
+
+        # Lookup image for the viewer: the soil index lives in the red channel.
+        index_rgb = np.dstack((soil_index_map,
+                               np.zeros_like(soil_index_map),
+                               np.zeros_like(soil_index_map)))
+        Image.fromarray(index_rgb, mode="RGB").save(output_soil_index_path)
+        print(f"Saved soil index lookup to: {output_soil_index_path}")
+
+        soil_color_img = np.full((target_size, target_size, 3), bg_color, dtype=np.uint8)
+        for i, meta in enumerate(soil_types):
+            soil_color_img[soil_index_map == i] = meta["color"]
+
+        soil_pil = Image.fromarray(soil_color_img, mode="RGB")
+        soil_draw = ImageDraw.Draw(soil_pil)
+        for start in range(int(b0), int(b1), 16):
+            end = min(start + 8, b1)
+            soil_draw.line([(start, b0), (end, b0)], fill=border_color, width=2)
+            soil_draw.line([(start, b1), (end, b1)], fill=border_color, width=2)
+            soil_draw.line([(b0, start), (b0, end)], fill=border_color, width=2)
+            soil_draw.line([(b1, start), (b1, end)], fill=border_color, width=2)
+
+        print("Generating shaded soil type texture...")
+        shade_and_save(soil_pil, output_soil_texture_path, "soil texture")
+        soil_available = True
+    else:
+        print(f"No soil map at {soil_path}. The soil layer will be disabled in the viewer.")
+
+    def rgb_to_hex(rgb):
+        return "#{:02X}{:02X}{:02X}".format(*rgb)
+
+    soil_types_json = json.dumps(
+        [{"name": s["name"], "nameEn": s["name_en"], "yield": s["yield"],
+          "color": rgb_to_hex(s["color"])} for s in soil_types],
+        ensure_ascii=False)
+    soil_available_js = "true" if soil_available else "false"
+    soil_control_style = "" if soil_available else "display: none;"
+    soil_legend_html = "\n".join(
+        '                <div class="legend-item"><span class="legend-swatch" style="background:'
+        + rgb_to_hex(s["color"]) + '"></span>' + s["name"] + " (" + s["yield"] + ")</div>"
+        for s in soil_types)
+
+
     # 4. Generate HTML interactive 3D Viewer
     print("Writing HTML interactive 3D viewer...")
     
@@ -200,7 +329,7 @@ def main():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador 3D - DEM Matopiba</title>
+    <title>Visualizador 3D - DEM Granja Bonita</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -500,6 +629,85 @@ def main():
             transform: translateX(20px);
         }}
 
+        /* OSM legend */
+        .legend {{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px 10px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }}
+
+        .legend-item {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }}
+
+        .legend-swatch {{
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }}
+
+        /* First person mode */
+        #crosshair {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            margin: -9px 0 0 -9px;
+            z-index: 12;
+            display: none;
+            pointer-events: none;
+        }}
+
+        #crosshair:before, #crosshair:after {{
+            content: "";
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+        }}
+
+        #crosshair:before {{ left: 8px; top: 0; width: 2px; height: 18px; }}
+        #crosshair:after {{ top: 8px; left: 0; height: 2px; width: 18px; }}
+
+        #pov-panel {{
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            max-width: 620px;
+            display: none;
+            padding: 14px 20px;
+            text-align: center;
+        }}
+
+        #pov-panel .pov-keys {{
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }}
+
+        #pov-panel .pov-keys span b {{
+            color: var(--text-color);
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 4px;
+        }}
+
         /* Probe Panel */
         #probe-panel {{
             bottom: 20px;
@@ -649,13 +857,13 @@ def main():
     <!-- Header / Info Panel -->
     <div id="header-panel" class="hud-panel">
         <div class="subtitle">Farming Simulator 25</div>
-        <h1>DEM Matopiba 3D</h1>
-        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Procedural Heightmap & Layout Viewer</p>
-        
+        <h1>DEM Granja Bonita 3D</h1>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Procedural Heightmap &amp; Layout Viewer</p>
+
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Tamaño Real</div>
-                <div class="stat-value">8.19 × 8.19 km</div>
+                <div class="stat-label">Lienzo DEM</div>
+                <div class="stat-value">{dem_size_m/1000:.2f} × {dem_size_m/1000:.2f} km</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Rango Alturas</div>
@@ -663,7 +871,7 @@ def main():
             </div>
             <div class="stat-card">
                 <div class="stat-label">Área Jugable</div>
-                <div class="stat-value">8.19 × 8.19 km</div>
+                <div class="stat-value">{playable_size_m/1000:.2f} × {playable_size_m/1000:.2f} km</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Vértices 3D</div>
@@ -678,7 +886,7 @@ def main():
             <div class="group-title">Visualización</div>
             <div class="control-row">
                 <label>Modo de Superficie</label>
-                <div class="btn-toggle-group">
+                <div class="btn-toggle-group" id="mode-buttons">
                     <button class="btn-toggle active" onclick="setRenderMode('texture')">Textura</button>
                     <button class="btn-toggle" onclick="setRenderMode('elevation')">Elevación</button>
                     <button class="btn-toggle" onclick="setRenderMode('wireframe')">Malla</button>
@@ -686,7 +894,7 @@ def main():
             </div>
             <div class="control-row">
                 <label>Resolución de Malla (Vértices)</label>
-                <div class="btn-toggle-group" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="btn-toggle-group" id="res-buttons" style="grid-template-columns: repeat(3, 1fr);">
                     <button class="btn-toggle" onclick="changeMeshResolution(256)">256²</button>
                     <button class="btn-toggle active" onclick="changeMeshResolution(512)">512²</button>
                     <button class="btn-toggle" onclick="changeMeshResolution(1024)">1024²</button>
@@ -709,12 +917,32 @@ def main():
             <div class="group-title">Límites & Guías</div>
             
             <div class="switch-container">
-                <span style="font-size: 13px;">Límite Jugable (8km)</span>
+                <span style="font-size: 13px;">Límite Jugable (8.19km)</span>
                 <label class="switch">
-                    <input type="checkbox" id="toggle-playable" onchange="togglePlayableBox(this.checked)">
+                    <input type="checkbox" id="toggle-playable" checked onchange="togglePlayableBox(this.checked)">
                     <span class="switch-slider"></span>
                 </label>
             </div>
+
+            <div class="switch-container" style="{soil_control_style}">
+                <span style="font-size: 13px;">Mapa de Suelo (Precision Farming)</span>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-soil" onchange="toggleSoilLayer(this.checked)">
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+
+            <div class="legend" id="soil-legend" style="display: none;">
+{soil_legend_html}
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="group-title">Vista en Primera Persona</div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Cámara a la altura de los ojos de un jugador (1.80 m) sobre el terreno.
+            </p>
+            <button class="btn-primary" id="pov-btn" onclick="togglePov(!povMode)">Entrar en Modo POV</button>
         </div>
 
         <div class="control-group">
@@ -743,7 +971,7 @@ def main():
         <div class="group-title" style="margin-bottom: 8px;">Información de Punto</div>
         <div style="display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; justify-content: space-between;">
-                <span style="font-size: 12px; color: var(--text-muted);">Coordenadas X, Z:</span>
+                <span style="font-size: 12px; color: var(--text-muted);">Coordenadas X, Y:</span>
                 <span class="probe-value" id="probe-coords">0m, 0m</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
@@ -754,6 +982,25 @@ def main():
                 <span style="font-size: 12px; color: var(--text-muted);">Zona:</span>
                 <span class="probe-value" id="probe-zone" style="font-weight: 600;">Zona de Juego</span>
             </div>
+            <div style="display: flex; justify-content: space-between;" id="probe-soil-row">
+                <span style="font-size: 12px; color: var(--text-muted);">Tipo de Suelo:</span>
+                <span class="probe-value" id="probe-soil" style="font-weight: 600;">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="crosshair"></div>
+
+    <div id="pov-panel" class="hud-panel">
+        <div style="font-size: 13px; font-weight: 600;">
+            Modo POV — altura de ojos <span id="pov-eye">1.80</span> m
+        </div>
+        <div class="pov-keys">
+            <span><b>Clic</b>Capturar ratón</span>
+            <span><b>W A S D</b>Moverse (25 m/s)</span>
+            <span><b>Shift</b>Correr (120 m/s)</span>
+            <span><b>Q / E</b>Altura de ojos</span>
+            <span><b>Esc</b>Salir</span>
         </div>
     </div>
 
@@ -773,7 +1020,23 @@ def main():
                 <span class="control-key">Clic Der + Arrastrar</span>
                 <span>Trasladar / Panorámica (Mover la vista)</span>
             </div>
-            <p style="margin-top: 16px;">Coloca el puntero del ratón sobre el mapa para analizar las coordenadas y elevación del terreno en tiempo real.</p>
+            <p style="margin-top: 16px;">Coloca el puntero del ratón sobre el mapa para analizar las coordenadas, la elevación y el tipo de suelo en tiempo real.</p>
+
+            <div class="modal-title" style="font-size: 16px; margin-top: 20px;">Modo POV (primera persona)</div>
+            <div class="modal-controls">
+                <span class="control-key">P</span>
+                <span>Entrar o salir de la vista de jugador (1.80 m)</span>
+
+                <span class="control-key">W A S D</span>
+                <span>Caminar (Shift para correr)</span>
+
+                <span class="control-key">Ratón</span>
+                <span>Mirar alrededor (haz clic para capturar el puntero)</span>
+
+                <span class="control-key">Q / E</span>
+                <span>Bajar o subir la altura de los ojos</span>
+            </div>
+            <p style="margin-top: 16px;">En modo POV la exageración vertical vuelve a 1x para que las pendientes se vean a escala real.</p>
         </div>
         <button class="btn-primary close-modal" onclick="toggleHelp(false)">¡Entendido!</button>
     </div>
@@ -782,17 +1045,17 @@ def main():
         // Elevation ranges from Python
         const MIN_HEIGHT = {h_min_m};
         const MAX_HEIGHT = {h_max_m};
-        const MAP_SIZE = 8192; // 8192m width and length
-        const PLAYABLE_SIZE = 8192;
+        const MAP_SIZE = {dem_size_m};        // Full DEM canvas in metres
+        const PLAYABLE_SIZE = {playable_size_m}; // Playable area, centered in the canvas
         const PLAYABLE_OFFSET = (MAP_SIZE - PLAYABLE_SIZE) / 2;
-        
-        // OSM Bounds and Data (from zoning_map.osm)
-        const MIN_LON = 37.715173389134144;
-        const MAX_LON = 37.82446513086585;
-        const MIN_LAT = 47.57967188702157;
-        const MAX_LAT = 47.653344312978426;
+
+        // OSM bounds and data, read straight from the source .osm file
+        const MIN_LON = {min_lon};
+        const MAX_LON = {max_lon};
+        const MIN_LAT = {min_lat};
+        const MAX_LAT = {max_lat};
         const OSM_DATA = {osm_data_json};
-        
+
         let container, scene, camera, renderer, controls;
         let terrainGeom, terrainMesh, terrainMaterial;
         let heightData = null; // Float32Array storing raw elevations in meters
@@ -805,7 +1068,65 @@ def main():
         // Scene objects
         let sunLight, ambientLight;
         let playableBox;
+        let skyDome;
+        let zonePolygons = []; // World-space polygons used to name the zone under the cursor
         let raycaster, mouse;
+
+        // Soil layer (Precision Farming)
+        const SOIL_AVAILABLE = {soil_available_js};
+        const SOIL_TYPES = {soil_types_json};
+        const SOIL_NONE = 255;
+        let soilTexture = null;
+        let soilData = null;      // Uint8Array of soil indices, one per texture pixel
+        let soilWidth = 0, soilHeight = 0;
+        let soilLayerOn = false;
+
+        // First person (POV) mode
+        let povMode = false;
+        let povYaw = 0, povPitch = 0;
+        let povEyeHeight = 1.8;   // metres above the ground
+        // Deliberately far above human speed: the map is 12km wide and waiting is worse
+        // than losing realism.
+        const POV_WALK_SPEED = 25.0;   // m/s (~90 km/h)
+        const POV_RUN_SPEED = 120.0;   // m/s, crosses the playable area in ~70s
+        const povKeys = {{}};
+        let povSavedState = null;
+        let lastFrameTime = 0;
+
+        // Feature types used to name what is under the cursor (read from the source .osm).
+        // Forests carry both natural=wood and landuse=farmyard, so wood is matched first.
+        const ZONE_TYPES = [
+            {{ key: 'natural',  val: 'water',     color: '#60A5FA', label: 'Agua' }},
+            {{ key: 'water',    val: null,        color: '#60A5FA', label: 'Agua' }},
+            {{ key: 'natural',  val: 'wood',      color: '#22C55E', label: 'Bosque' }},
+            {{ key: 'landuse',  val: 'forest',    color: '#22C55E', label: 'Bosque' }},
+            {{ key: 'landuse',  val: 'farmyard',  color: '#EC4899', label: 'Farmyard' }},
+            {{ key: 'landuse',  val: 'farmland',  color: '#86EFAC', label: 'Farmland' }}
+        ];
+
+        function matchZoneType(tags) {{
+            for (const rule of ZONE_TYPES) {{
+                if (rule.key in tags && (rule.val === null || tags[rule.key] === rule.val)) {{
+                    return rule;
+                }}
+            }}
+            return null;
+        }}
+
+        // OSM lat/lon -> world metres. The OSM area covers only the central playable band.
+        function osmToWorld(lat, lon) {{
+            const u = (lon - MIN_LON) / (MAX_LON - MIN_LON);
+            const v = (MAX_LAT - lat) / (MAX_LAT - MIN_LAT);
+            return [(u - 0.5) * PLAYABLE_SIZE, (v - 0.5) * PLAYABLE_SIZE];
+        }}
+
+        // World metres -> elevation in metres (unexaggerated)
+        function heightAtWorld(x, z) {{
+            const u = (x + MAP_SIZE / 2) / MAP_SIZE;
+            const v = (z + MAP_SIZE / 2) / MAP_SIZE;
+            if (u < 0 || u > 1 || v < 0 || v > 1) return 0;
+            return getInterpolatedHeight(u, v);
+        }}
         
         // Textures
         let colorTexture, heightmapImage;
@@ -825,7 +1146,13 @@ def main():
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 30000);
             
-            renderer = new THREE.WebGLRenderer({{ antialias: true, alpha: false }});
+            // Logarithmic depth keeps the 0.3m near plane of the POV camera usable
+            // together with the 30km far plane needed for the full canvas.
+            renderer = new THREE.WebGLRenderer({{
+                antialias: true,
+                alpha: false,
+                logarithmicDepthBuffer: true
+            }});
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
@@ -839,7 +1166,7 @@ def main():
             controls.screenSpacePanning = false;
             controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
             controls.minDistance = 50;
-            controls.maxDistance = 15000;
+            controls.maxDistance = 25000;
             
             // Default camera view
             resetCamera();
@@ -854,7 +1181,7 @@ def main():
             sunLight.shadow.mapSize.height = 2048;
             sunLight.shadow.camera.near = 100;
             sunLight.shadow.camera.far = 20000;
-            const d = 5000;
+            const d = 7000;
             sunLight.shadow.camera.left = -d;
             sunLight.shadow.camera.right = d;
             sunLight.shadow.camera.top = d;
@@ -867,21 +1194,42 @@ def main():
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
 
+            // Sky used by the first person view
+            buildSky();
+
+            // Name lookup for the areas of the map
+            buildZoneIndex();
+
+            if (!SOIL_AVAILABLE) {{
+                document.getElementById('probe-soil-row').style.display = 'none';
+            }}
+
             // Load assets
             loadAssets();
 
             // Resize handler
             window.addEventListener('resize', onWindowResize, false);
-            
+
             // Mouse move for terrain inspection
             window.addEventListener('mousemove', onMouseMove, false);
-            
+
+            // First person input
+            window.addEventListener('keydown', onKeyDown, false);
+            window.addEventListener('keyup', onKeyUp, false);
+            renderer.domElement.addEventListener('click', function() {{
+                if (povMode && document.pointerLockElement !== renderer.domElement) {{
+                    renderer.domElement.requestPointerLock();
+                }}
+            }}, false);
+
             // Start Loop
+            lastFrameTime = performance.now();
             animate();
         }}
 
         function resetCamera() {{
-            camera.position.set(0, 4000, 6000);
+            // Framed for the full 12.29km canvas
+            camera.position.set(0, 6500, 9500);
             controls.target.set(0, 100, 0);
             controls.update();
         }}
@@ -909,11 +1257,14 @@ def main():
             // Cache-busting query parameter to force reloading the images from disk
             const cb = '?t=' + Date.now();
             
+            loadSoilLayer();
+
             textureLoader.load('dem_1024_texture.png' + cb, function(tex) {{
                 colorTexture = tex;
                 colorTexture.wrapS = THREE.ClampToEdgeWrapping;
                 colorTexture.wrapT = THREE.ClampToEdgeWrapping;
-                
+                colorTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
                 loadingProgress.innerText = "Cargando Datos de Elevación (16-bit)...";
                 
                 const img = new Image();
@@ -929,7 +1280,7 @@ def main():
                     
                     // Build auxiliary lines/guides
                     buildGuides();
-                    
+
                     // Remove loading overlay
                     const loader = document.getElementById('loading-overlay');
                     loader.style.opacity = 0;
@@ -1035,7 +1386,7 @@ def main():
             // Materials
             if (renderMode === 'texture') {{
                 terrainMaterial = new THREE.MeshStandardMaterial({{
-                    map: colorTexture,
+                    map: (soilLayerOn && soilTexture) ? soilTexture : colorTexture,
                     roughness: 0.85,
                     metalness: 0.1,
                     flatShading: false
@@ -1138,8 +1489,311 @@ def main():
                 opacity: 0.8
             }});
             playableBox = new THREE.LineSegments(boxGeom, boxMat);
-            playableBox.visible = false; // Start hidden by default
+            playableBox.visible = !povMode && document.getElementById('toggle-playable').checked;
             scene.add(playableBox);
+        }}
+
+        // Builds the lookup used to name the area under the cursor. No 3D objects involved.
+        function buildZoneIndex() {{
+            zonePolygons = [];
+
+            for (const way of OSM_DATA) {{
+                const tags = way.tags || {{}};
+                const coords = way.coords || [];
+                if (coords.length < 3) continue;
+
+                const isClosed =
+                    coords[0][0] === coords[coords.length - 1][0] &&
+                    coords[0][1] === coords[coords.length - 1][1];
+                if (!isClosed) continue;
+
+                const type = matchZoneType(tags);
+                if (!type) continue;
+
+                const flat = coords.map(([lat, lon]) => osmToWorld(lat, lon));
+                zonePolygons.push({{
+                    points: flat,
+                    label: tags.name ? `${{type.label}} · ${{tags.name}}` : type.label,
+                    color: type.color,
+                    area: polygonArea(flat)
+                }});
+            }}
+
+            // Smallest area first, so an inner feature wins over the field enclosing it.
+            zonePolygons.sort((a, b) => a.area - b.area);
+        }}
+
+        function polygonArea(pts) {{
+            let sum = 0;
+            for (let i = 0; i < pts.length; i++) {{
+                const [x0, z0] = pts[i];
+                const [x1, z1] = pts[(i + 1) % pts.length];
+                sum += x0 * z1 - x1 * z0;
+            }}
+            return Math.abs(sum) / 2;
+        }}
+
+        function pointInPolygon(x, z, pts) {{
+            let inside = false;
+            for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {{
+                const [xi, zi] = pts[i];
+                const [xj, zj] = pts[j];
+                if ((zi > z) !== (zj > z) &&
+                    x < (xj - xi) * (z - zi) / (zj - zi) + xi) {{
+                    inside = !inside;
+                }}
+            }}
+            return inside;
+        }}
+
+        function findZone(x, z) {{
+            for (const poly of zonePolygons) {{
+                if (pointInPolygon(x, z, poly.points)) return poly;
+            }}
+            return null;
+        }}
+
+        // --- Soil layer (Precision Farming) -------------------------------------
+
+        function soilAt(x, z) {{
+            if (!soilData) return null;
+
+            const u = (x + MAP_SIZE / 2) / MAP_SIZE;
+            const v = (z + MAP_SIZE / 2) / MAP_SIZE;
+            if (u < 0 || u > 1 || v < 0 || v > 1) return null;
+
+            const px = Math.min(soilWidth - 1, Math.floor(u * soilWidth));
+            const py = Math.min(soilHeight - 1, Math.floor(v * soilHeight));
+            const idx = soilData[py * soilWidth + px];
+
+            return (idx === SOIL_NONE || idx >= SOIL_TYPES.length) ? null : SOIL_TYPES[idx];
+        }}
+
+        function loadSoilLayer() {{
+            if (!SOIL_AVAILABLE) return;
+
+            const cb = '?t=' + Date.now();
+
+            new THREE.TextureLoader().load('soil_1024_texture.png' + cb, function(tex) {{
+                soilTexture = tex;
+                soilTexture.wrapS = THREE.ClampToEdgeWrapping;
+                soilTexture.wrapT = THREE.ClampToEdgeWrapping;
+                soilTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                if (soilLayerOn) applySurfaceTexture();
+            }});
+
+            // Index image: soil type per pixel is stored in the red channel
+            const img = new Image();
+            img.src = 'soil_1024_index.png' + cb;
+            img.onload = function() {{
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const data = ctx.getImageData(0, 0, img.width, img.height).data;
+                soilWidth = img.width;
+                soilHeight = img.height;
+                soilData = new Uint8Array(soilWidth * soilHeight);
+                for (let i = 0; i < soilData.length; i++) {{
+                    soilData[i] = data[i * 4];
+                }}
+            }};
+        }}
+
+        function applySurfaceTexture() {{
+            if (!terrainMaterial || renderMode !== 'texture') return;
+            const tex = (soilLayerOn && soilTexture) ? soilTexture : colorTexture;
+            if (tex) {{
+                terrainMaterial.map = tex;
+                terrainMaterial.needsUpdate = true;
+            }}
+        }}
+
+        function toggleSoilLayer(on) {{
+            soilLayerOn = on;
+            document.getElementById('soil-legend').style.display = on ? 'grid' : 'none';
+
+            // The soil map only makes sense on the textured surface
+            if (on && renderMode !== 'texture') setRenderMode('texture');
+            applySurfaceTexture();
+        }}
+
+        // --- First person view (player eye height) -------------------------------
+
+        function buildSky() {{
+            // Vertical gradient painted on a canvas and wrapped on a large inverted sphere,
+            // so the POV camera has a horizon to look at instead of the void.
+            const c = document.createElement('canvas');
+            c.width = 4;
+            c.height = 256;
+            const ctx = c.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 256);
+            grad.addColorStop(0.00, '#1e3f73');
+            grad.addColorStop(0.45, '#6f9bc9');
+            grad.addColorStop(0.82, '#c4d2e0');
+            grad.addColorStop(1.00, '#e8d9bb');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 4, 256);
+
+            const geom = new THREE.SphereGeometry(20000, 32, 20);
+            const mat = new THREE.MeshBasicMaterial({{
+                map: new THREE.CanvasTexture(c),
+                side: THREE.BackSide,
+                fog: false,
+                depthWrite: false
+            }});
+
+            skyDome = new THREE.Mesh(geom, mat);
+            skyDome.visible = false;
+            scene.add(skyDome);
+        }}
+
+        function togglePov(enable) {{
+            if (enable === povMode) return;
+            if (enable && !heightData) return; // terrain not loaded yet
+
+            povMode = enable;
+
+            const povPanel = document.getElementById('pov-panel');
+            const crosshair = document.getElementById('crosshair');
+            const btn = document.getElementById('pov-btn');
+
+            if (enable) {{
+                povSavedState = {{
+                    position: camera.position.clone(),
+                    target: controls.target.clone(),
+                    exaggeration: verticalExaggeration,
+                    near: camera.near,
+                    fov: camera.fov,
+                    fogColor: scene.fog.color.getHex()
+                }};
+
+                // At eye level only the real, unexaggerated elevations make sense
+                if (verticalExaggeration !== 1.0) {{
+                    document.getElementById('exaggeration-slider').value = 1.0;
+                    updateExaggeration(1.0);
+                }}
+
+                controls.enabled = false;
+                camera.near = 0.3;
+                camera.fov = 70;
+                camera.updateProjectionMatrix();
+                camera.rotation.order = 'YXZ';
+
+                // Drop the player where the orbit camera was looking, facing the same way
+                const dir = new THREE.Vector3().subVectors(povSavedState.target, povSavedState.position);
+                povYaw = Math.atan2(-dir.x, -dir.z);
+                povPitch = 0;
+
+                const limit = MAP_SIZE / 2 - 10;
+                const x = Math.max(-limit, Math.min(limit, povSavedState.target.x));
+                const z = Math.max(-limit, Math.min(limit, povSavedState.target.z));
+                camera.position.set(x, heightAtWorld(x, z) + povEyeHeight, z);
+
+                scene.fog.color.setHex(0xbfc9d4); // daytime haze instead of the dark void
+                skyDome.visible = true;
+                // The guide box would hang across the sky at eye level
+                if (playableBox) playableBox.visible = false;
+
+                povPanel.style.display = 'block';
+                crosshair.style.display = 'block';
+                btn.innerText = 'Salir del Modo POV';
+                btn.blur(); // keep the keyboard on the camera, not on the button
+                renderer.domElement.requestPointerLock();
+            }} else {{
+                if (document.pointerLockElement) document.exitPointerLock();
+
+                controls.enabled = true;
+                camera.near = povSavedState.near;
+                camera.fov = povSavedState.fov;
+                camera.updateProjectionMatrix();
+                camera.rotation.set(0, 0, 0);
+                camera.position.copy(povSavedState.position);
+                controls.target.copy(povSavedState.target);
+                controls.update();
+
+                scene.fog.color.setHex(povSavedState.fogColor);
+                skyDome.visible = false;
+                if (playableBox) {{
+                    playableBox.visible = document.getElementById('toggle-playable').checked;
+                }}
+
+                povPanel.style.display = 'none';
+                crosshair.style.display = 'none';
+                btn.innerText = 'Entrar en Modo POV';
+
+                if (povSavedState.exaggeration !== verticalExaggeration) {{
+                    document.getElementById('exaggeration-slider').value = povSavedState.exaggeration;
+                    updateExaggeration(povSavedState.exaggeration);
+                }}
+
+                for (const k in povKeys) povKeys[k] = false;
+            }}
+        }}
+
+        function updatePov(dt) {{
+            camera.rotation.y = povYaw;
+            camera.rotation.x = povPitch;
+            camera.rotation.z = 0;
+
+            const running = povKeys['ShiftLeft'] || povKeys['ShiftRight'];
+            const speed = running ? POV_RUN_SPEED : POV_WALK_SPEED;
+
+            let fwd = 0, side = 0;
+            if (povKeys['KeyW'] || povKeys['ArrowUp']) fwd += 1;
+            if (povKeys['KeyS'] || povKeys['ArrowDown']) fwd -= 1;
+            if (povKeys['KeyD'] || povKeys['ArrowRight']) side += 1;
+            if (povKeys['KeyA'] || povKeys['ArrowLeft']) side -= 1;
+
+            if (fwd !== 0 || side !== 0) {{
+                const len = Math.hypot(fwd, side);
+                fwd /= len;
+                side /= len;
+
+                const sinY = Math.sin(povYaw), cosY = Math.cos(povYaw);
+                const dx = (-sinY * fwd + cosY * side) * speed * dt;
+                const dz = (-cosY * fwd - sinY * side) * speed * dt;
+
+                const limit = MAP_SIZE / 2 - 10;
+                camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x + dx));
+                camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z + dz));
+            }}
+
+            // Stick to the ground
+            const ground = heightAtWorld(camera.position.x, camera.position.z) * verticalExaggeration;
+            camera.position.y = ground + povEyeHeight;
+            skyDome.position.set(camera.position.x, 0, camera.position.z);
+        }}
+
+        function onKeyDown(e) {{
+            if (e.code === 'Escape' && povMode) {{
+                togglePov(false);
+                return;
+            }}
+            if (e.code === 'KeyP' && !e.repeat) {{
+                togglePov(!povMode);
+                return;
+            }}
+            if (!povMode) return;
+
+            povKeys[e.code] = true;
+
+            if (e.code === 'KeyQ' || e.code === 'KeyE') {{
+                povEyeHeight = Math.max(0.4, Math.min(8.0,
+                    povEyeHeight + (e.code === 'KeyE' ? 0.2 : -0.2)));
+                document.getElementById('pov-eye').innerText = povEyeHeight.toFixed(2);
+            }}
+
+            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space',
+                 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) !== -1) {{
+                e.preventDefault();
+            }}
+        }}
+
+        function onKeyUp(e) {{
+            povKeys[e.code] = false;
         }}
 
         function updateExaggeration(val) {{
@@ -1148,16 +1802,16 @@ def main():
             
             if (heightData) {{
                 buildTerrainMesh(currentRes);
-                
+
                 // Get the current visible state of playableBox before recreating it
                 const wasPlayableVisible = playableBox ? playableBox.visible : false;
-                
+
                 if (playableBox) {{
                     scene.remove(playableBox);
                 }}
-                
+
                 buildGuides();
-                
+
                 // Restore the visibility state
                 if (playableBox) {{
                     playableBox.visible = wasPlayableVisible;
@@ -1168,9 +1822,9 @@ def main():
         function setRenderMode(mode) {{
             renderMode = mode;
             
-            const buttons = document.querySelectorAll('#control-panel .control-row:nth-child(1) .btn-toggle');
+            const buttons = document.querySelectorAll('#mode-buttons .btn-toggle');
             buttons.forEach(btn => btn.classList.remove('active'));
-            
+
             if (mode === 'texture') buttons[0].classList.add('active');
             if (mode === 'elevation') buttons[1].classList.add('active');
             if (mode === 'wireframe') buttons[2].classList.add('active');
@@ -1183,7 +1837,7 @@ def main():
         function changeMeshResolution(res) {{
             currentRes = res;
             
-            const buttons = document.querySelectorAll('#control-panel .control-row:nth-child(2) .btn-toggle');
+            const buttons = document.querySelectorAll('#res-buttons .btn-toggle');
             buttons.forEach(btn => btn.classList.remove('active'));
             
             if (res === 256) buttons[0].classList.add('active');
@@ -1240,6 +1894,18 @@ def main():
         }}
 
         function onMouseMove(event) {{
+            if (povMode) {{
+                if (document.pointerLockElement === renderer.domElement) {{
+                    povYaw -= (event.movementX || 0) * 0.0022;
+                    povPitch -= (event.movementY || 0) * 0.0022;
+                    const maxPitch = Math.PI / 2 - 0.05;
+                    povPitch = Math.max(-maxPitch, Math.min(maxPitch, povPitch));
+                }}
+                // The probe reads whatever the crosshair is pointing at
+                mouse.set(0, 0);
+                return;
+            }}
+
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         }}
@@ -1261,20 +1927,25 @@ def main():
                     probePanel.style.display = 'block';
                     const realY = point.y / verticalExaggeration;
                     
-                    document.getElementById('probe-coords').innerText = `X: ${{Math.round(x)}}m | Z: ${{Math.round(z)}}m`;
-                    document.getElementById('probe-height').innerText = `${{realY.toFixed(2)}}m`;
-                    
+                    // Local coordinates inside the playable area (0..8192, origin NW), which is
+                    // the coordinate system used by the OSM and DEM generators.
+                    const localX = x + PLAYABLE_SIZE / 2;
+                    const localY = z + PLAYABLE_SIZE / 2;
+
                     const inPlayable = Math.abs(x) <= PLAYABLE_SIZE/2 && Math.abs(z) <= PLAYABLE_SIZE/2;
+
+                    document.getElementById('probe-coords').innerText = inPlayable
+                        ? `X: ${{Math.round(localX)}}m | Y: ${{Math.round(localY)}}m`
+                        : `X: ${{Math.round(x)}}m | Z: ${{Math.round(z)}}m (global)`;
+                    document.getElementById('probe-height').innerText = `${{realY.toFixed(2)}}m`;
+
                     const zoneLabel = document.getElementById('probe-zone');
-                    
+
                     if (inPlayable) {{
-                        const dxLake = x - 1704;
-                        const dzLake = z - 1704;
-                        const distLake = Math.max(Math.abs(dxLake), Math.abs(dzLake));
-                        
-                        if (distLake <= 90) {{
-                            zoneLabel.innerText = "Lago / Reserva (225m)";
-                            zoneLabel.style.color = "#3b82f6";
+                        const zone = findZone(x, z);
+                        if (zone) {{
+                            zoneLabel.innerText = zone.label;
+                            zoneLabel.style.color = zone.color;
                         }} else {{
                             zoneLabel.innerText = "Área Jugable";
                             zoneLabel.style.color = "#10b981";
@@ -1282,6 +1953,16 @@ def main():
                     }} else {{
                         zoneLabel.innerText = "Fondo No Jugable";
                         zoneLabel.style.color = "#f43f5e";
+                    }}
+
+                    const soilLabel = document.getElementById('probe-soil');
+                    const soil = soilAt(x, z);
+                    if (soil) {{
+                        soilLabel.innerText = `${{soil.name}} (${{soil.yield}})`;
+                        soilLabel.style.color = soil.color;
+                    }} else {{
+                        soilLabel.innerText = "—";
+                        soilLabel.style.color = "var(--text-muted)";
                     }}
                 }} else {{
                     probePanel.style.display = 'none';
@@ -1293,7 +1974,17 @@ def main():
 
         function animate() {{
             requestAnimationFrame(animate);
-            controls.update();
+
+            const now = performance.now();
+            const dt = Math.min(0.1, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            if (povMode) {{
+                updatePov(dt);
+            }} else {{
+                controls.update();
+            }}
+
             checkTerrainIntersection();
             renderer.render(scene, camera);
         }}

@@ -528,7 +528,7 @@ def main():
     print("   Generating Northern Farmlands (Horizontal standard, 15m borders)...")
 
     # Northern strip parcels (strip number, field number) kept as yard, not farmland.
-    north_yards = {(5, 1)}
+    north_yards = {(5, 1), (5, 12)}
     
     # Define 5 strips of height 180m
     strips = [
