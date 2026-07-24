@@ -83,16 +83,16 @@ def main():
     noise_zone = generate_noise_field(seed, S, args.scale_coarse, args.scale_medium, args.scale_fine)
     noise_patch = generate_noise_field(seed + 12345, S, args.scale_coarse * 0.7, args.scale_medium * 0.7, args.scale_fine)
     
-    # Target proportions (Adjusted: Franco increased to 22.39%, others reduced proportionally):
-    # 0 (Arena Limosa / Loamy Sand): 19.202315% (805393 px)
-    # 1 (Franco Arenoso / Sandy Loam): 42.22749% (1771148 px)
-    # 2 (Franco / Loam): 22.39% (939104 px)
-    # 3 (Arcilla Limosa / Silty Clay): 16.180195% (678659 px)
+    # Target proportions (Adjusted: Arena Limosa (0) and Arcilla Limosa (3) reduced to 5.0% max):
+    # 0 (Arena Limosa / Loamy Sand): 5.0% (209715 px)
+    # 1 (Franco Arenoso / Sandy Loam): 46.45% (1948254 px)
+    # 2 (Franco / Loam): 43.55% (1826620 px)
+    # 3 (Arcilla Limosa / Silty Clay): 5.0% (209715 px)
     
     # Total pixels = 4,194,304
-    # Zone B = Franco + Arcilla Limosa = 38.570195%
-    # Zone A = Arena Limosa + Franco Arenoso = 61.429805%
-    pct_zone_B = 38.570195
+    # Zone B = Franco + Arcilla Limosa = 48.55%
+    # Zone A = Arena Limosa + Franco Arenoso = 51.45%
+    pct_zone_B = 48.55
     
     print("[*] Performing nested percentile thresholding...")
     # Step 1: Split noise_zone into Zone A and Zone B
@@ -100,17 +100,15 @@ def main():
     zone_B_mask = (noise_zone < threshold_zone)
     zone_A_mask = ~zone_B_mask
     
-    # Step 2: Split Zone A (Loamy Sand 19.20% vs Sandy Loam 42.23%)
-    # Loamy Sand is 19.202315% of total map
-    # Inside Zone A, Loamy Sand proportion is 19.202315 / 61.429805 = 31.258955%
-    pct_val0_in_A = 31.258955
+    # Step 2: Split Zone A (Loamy Sand 5.0% vs Sandy Loam 46.45%)
+    # Inside Zone A, Loamy Sand proportion is 5.0 / 51.45 = 9.718173%
+    pct_val0_in_A = 9.718173
     noise_patch_A = noise_patch[zone_A_mask]
     threshold_A = np.percentile(noise_patch_A, pct_val0_in_A)
     
-    # Step 3: Split Zone B (Loam 22.39% vs Silty Clay 16.18%)
-    # Loam is 22.39% of total map
-    # Inside Zone B, Loam proportion is 22.39 / 38.570195 = 58.04999%
-    pct_val2_in_B = 58.04999
+    # Step 3: Split Zone B (Loam 43.55% vs Silty Clay 5.0%)
+    # Inside Zone B, Loam proportion is 43.55 / 48.55 = 89.701339%
+    pct_val2_in_B = 89.701339
     noise_patch_B = noise_patch[zone_B_mask]
     threshold_B = np.percentile(noise_patch_B, pct_val2_in_B)
     

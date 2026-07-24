@@ -137,75 +137,9 @@ def main():
     # Smooth with adjusted sigma to scale with pixel resolution (6m = 9px)
     terrain = gaussian_filter(terrain, sigma=6 * scale_m_to_px)
     
-    # Save a copy of terrain before adding hills to compute clean yard target heights
+    # Save a copy of terrain before farmyard flattening to compute clean yard target heights
     terrain_before_hills = terrain.copy()
-    
-    # 4.1. Generate hills along the road (500m free corridor width, 80m max height, 1000m hill width)
-    print("4.1. Generating hills along the road (500m free width, 1000m hill width, 80m height)...")
-    road_x = get_road_x_global(y_m, offset_m)
-    dist_to_road = np.abs(x_m - road_x)
-    
-    w_hill = 1000.0   # width of the hill band (extended to 1000m each side)
-    d_start = 250.0   # clearance from road center (250m each side = 500m corridor)
-    d_end = d_start + w_hill
-    
-    # Mask where hills are active
-    hill_mask = (dist_to_road >= d_start) & (dist_to_road <= d_end)
-    
-    # Profile S(d) across the road
-    S_d = np.zeros_like(dist_to_road)
-    u_d = (dist_to_road[hill_mask] - d_start) / w_hill
-    S_d[hill_mask] = np.sin(np.pi * u_d) ** 2
-    
-    # Variation P(y) along the road (chain of hills)
-    val_y = (
-        np.sin(y_m / 150.0) * 0.5 + 
-        np.sin(y_m / 350.0) * 0.3 + 
-        np.sin(y_m / 800.0) * 0.2
-    )
-    val_y_min = val_y.min()
-    val_y_max = val_y.max()
-    P_y = (val_y - val_y_min) / (val_y_max - val_y_min)
-    P_y = P_y ** 2
-    
-    # Fade factor near northern/southern playable boundaries
-    w_fade_y = np.zeros_like(y_m)
-    mask_playable = (y_m >= 2048.0) & (y_m <= 10240.0)
-    fade_len = 500.0
-    y_play = y_m[mask_playable]
-    w_play = np.ones_like(y_play)
-    
-    # North boundary fade (2048 to 2048 + fade_len)
-    mask_north = y_play < (2048.0 + fade_len)
-    w_play[mask_north] = (y_play[mask_north] - 2048.0) / fade_len
-    
-    # South boundary fade (10240 - fade_len to 10240)
-    mask_south = y_play > (10240.0 - fade_len)
-    w_play[mask_south] = (10240.0 - y_play[mask_south]) / fade_len
-    
-    w_fade_y[mask_playable] = w_play
-    
-    # Sinuous road y-range weight: 1.0 in sinuous part, fades to 0.0 at vertical parts
-    y_local = np.clip(y_m - offset_m, 0.0, 8192.0)
-    y_miles = y_local / 1024.0
-    w_sinuous_y = np.ones_like(y_miles)
-    
-    # Top transition (fade out from y_miles=2.4 to y_miles=2.2)
-    mask_top_fade = (y_miles >= 2.2) & (y_miles < 2.4)
-    w_sinuous_y[mask_top_fade] = (y_miles[mask_top_fade] - 2.2) / 0.2
-    w_sinuous_y[y_miles < 2.2] = 0.0
-    
-    # Bottom transition (fade out from y_miles=5.6 to y_miles=5.8)
-    mask_bottom_fade = (y_miles > 5.6) & (y_miles <= 5.8)
-    w_sinuous_y[mask_bottom_fade] = (5.8 - y_miles[mask_bottom_fade]) / 0.2
-    w_sinuous_y[y_miles > 5.8] = 0.0
-    
-    # Max height is 80 meters (8000.0 raw units)
-    H_max_raw = 80.0 * 100.0
-    hill_heights = H_max_raw * S_d * P_y * w_fade_y * w_sinuous_y
-    
-    # Add hills to terrain
-    terrain = terrain + hill_heights
+
     
     print("5. Flattening southern farmyards with extra-gentle transitions...")
     yards_to_flatten_m = [
@@ -265,6 +199,96 @@ def main():
                 if local_ramp[y_offset, x_offset]:
                     terrain[y, x] = local_smoothed[y_offset, x_offset]
                     
+    print("5.1. Creating 15m deep reservoir in southern half of Town Farmyard...")
+    # Town Farmyard: x [1664..2048], y [1024..1536] (relative to offset_m)
+    # Southern half: y [1280..1536] (relative to offset_m)
+    res_x0_m = 1664.0 + offset_m
+    res_x1_m = 2048.0 + offset_m
+    res_y0_m = 1280.0 + offset_m
+    res_y1_m = 1536.0 + offset_m
+    
+    res_x0_px = int(res_x0_m * scale_m_to_px)
+    res_x1_px = int(res_x1_m * scale_m_to_px)
+    res_y0_px = int(res_y0_m * scale_m_to_px)
+    res_y1_px = int(res_y1_m * scale_m_to_px)
+    
+    depth_m = 15.0
+    depth_units = depth_m * 100.0  # 15m * 100 raw units/m = 1500 units
+    bank_margin_m = 30.0  # 30m smooth sloped bank
+    
+    H_town_surface = np.median(terrain[res_y0_px:res_y1_px+1, res_x0_px:res_x1_px+1])
+    print(f"   Town Farmyard Surface: {H_town_surface:.1f} -> Reservoir Floor: {H_town_surface - depth_units:.1f} (Depth: {depth_m}m)")
+    
+    terrain_before_res = terrain.copy()
+    
+    for y in range(res_y0_px, res_y1_px + 1):
+        pt_y_m = y / scale_m_to_px
+        dy_edge = min(pt_y_m - res_y0_m, res_y1_m - pt_y_m)
+        for x in range(res_x0_px, res_x1_px + 1):
+            pt_x_m = x / scale_m_to_px
+            dx_edge = min(pt_x_m - res_x0_m, res_x1_m - pt_x_m)
+            d_edge = min(dx_edge, dy_edge)
+            
+            if d_edge <= 0:
+                w = 0.0
+            elif d_edge < bank_margin_m:
+                t = d_edge / bank_margin_m
+                w = 0.5 * (1.0 - math.cos(math.pi * t))
+            else:
+                w = 1.0
+                
+            terrain[y, x] = terrain_before_res[y, x] - w * depth_units
+            
+    # Apply local Gaussian smoothing on the reservoir banks
+    res_sub = terrain[res_y0_px-5:res_y1_px+6, res_x0_px-5:res_x1_px+6]
+    terrain[res_y0_px-5:res_y1_px+6, res_x0_px-5:res_x1_px+6] = gaussian_filter(res_sub, sigma=3 * scale_m_to_px)
+    
+    print("5.2. Creating sloping canal (3m deep at East to 6m deep at West, 10m wide) into reservoir...")
+    chan_x_west_m = 4096.0   # Reservoir eastern wall (res_x1_m)
+    chan_x_east_m = 10240.0  # Eastern playable boundary
+    chan_y_center_m = 3456.0 # Midpoint of reservoir in Y
+    
+    chan_width_m = 10.0
+    half_w_m = chan_width_m / 2.0  # 5.0m
+    bank_w_m = 3.0  # 3m sloped bank
+    
+    cx0_px = int(chan_x_west_m * scale_m_to_px)
+    cx1_px = int(chan_x_east_m * scale_m_to_px)
+    cy0_px = int((chan_y_center_m - half_w_m - bank_w_m - 2.0) * scale_m_to_px)
+    cy1_px = int((chan_y_center_m + half_w_m + bank_w_m + 2.0) * scale_m_to_px)
+    
+    terrain_before_chan = terrain.copy()
+    
+    for y in range(cy0_px, cy1_px + 1):
+        pt_y_m = y / scale_m_to_px
+        dy_center = abs(pt_y_m - chan_y_center_m)
+        
+        if dy_center > (half_w_m + bank_w_m):
+            continue
+            
+        if dy_center <= half_w_m:
+            w_profile = 1.0
+        else:
+            t_bank = (half_w_m + bank_w_m - dy_center) / bank_w_m
+            w_profile = 0.5 * (1.0 - math.cos(math.pi * t_bank))
+            
+        for x in range(cx0_px, cx1_px + 1):
+            pt_x_m = x / scale_m_to_px
+            
+            # Linear ramp from East (3.0m) to West (6.0m)
+            u_ramp = (chan_x_east_m - pt_x_m) / (chan_x_east_m - chan_x_west_m)
+            u_ramp = max(0.0, min(1.0, u_ramp))
+            
+            depth_m = 3.0 + u_ramp * (6.0 - 3.0)  # 3m at East -> 6m at West
+            depth_units = depth_m * 100.0
+            
+            target_height = terrain_before_chan[y, x] - w_profile * depth_units
+            terrain[y, x] = min(terrain[y, x], target_height)
+            
+    # Apply light Gaussian smoothing to channel edges
+    chan_sub = terrain[cy0_px-3:cy1_px+4, cx0_px-5:cx1_px+6]
+    terrain[cy0_px-3:cy1_px+4, cx0_px-5:cx1_px+6] = gaussian_filter(chan_sub, sigma=2 * scale_m_to_px)
+                    
     # Clamp terrain to valid 16-bit range
     terrain = np.clip(terrain, 2000.0, 62000.0)
     
@@ -284,6 +308,8 @@ def main():
     all_areas_m = [
         (1024.0 + offset_m, 1024.0 + offset_m, 1664.0 + offset_m, 1536.0 + offset_m, "Town"),
         (1664.0 + offset_m, 1024.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Farmyard"),
+        (1664.0 + offset_m, 1280.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Reservoir (15m)"),
+        (4096.0, 3451.0, 10240.0, 3461.0, "East Canal (3m-6m)"),
         (4480.0 + offset_m, 1035.0 + offset_m, 4736.0 + offset_m, 1291.0 + offset_m, "Yard 1 (NE)"),
         (2406.0 + offset_m, 6850.0 + offset_m, 2714.0 + offset_m, 7157.0 + offset_m, "Yard 2 (SW)"),
         (4506.0 + offset_m, 6952.0 + offset_m, 4710.0 + offset_m, 7157.0 + offset_m, "Yard 3 (S)"),

@@ -58,7 +58,9 @@ def main():
     print(f"Saved RGB heightmap to: {output_rgb_path}")
     
     # 2.5. Parse OSM way coordinates to build polygon mask for texture coloring
-    osm_path = os.path.join(project_root, "osm_generator", "outputs", "zoning_map.osm")
+    osm_path = os.path.join(project_root, "osm_generator", "outputs", "zoning_map manual.osm")
+    if not os.path.exists(osm_path):
+        osm_path = os.path.join(project_root, "osm_generator", "outputs", "zoning_map.osm")
     if not os.path.exists(osm_path):
         osm_path = os.path.join(current_dir, "map.osm")
         
@@ -117,6 +119,7 @@ def main():
             ("landuse", "farmland", "#86EFAC"),   # Light green for farmland
             ("natural", "water", "#2563EB"),     # Water blue
             ("water", None, "#2563EB"),
+            ("railway", None, "#9CA3AF"),        # Silver/gray railway
             ("highway", None, "#4B5563"),        # Road gray
         ]
         
