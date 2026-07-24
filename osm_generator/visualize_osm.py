@@ -127,12 +127,19 @@ def main():
             poly = patches.Polygon(coords, closed=True, facecolor='#15803D', edgecolor='#16A34A', alpha=0.45, linewidth=1.5)
             ax.add_patch(poly)
 
+        elif 'landuse' in tags and tags['landuse'] == 'farmland':
+            # Farmland Field
+            poly = patches.Polygon(coords, closed=True, facecolor='#EAB308', edgecolor='#CA8A04', alpha=0.18, linewidth=0.8)
+            ax.add_patch(poly)
+
         # Line features (Roads / Rail)
         elif 'highway' in tags and tags['highway'] == 'primary':
             ax.plot(x_coords, y_coords, color='#F97316', linewidth=4.0, solid_capstyle='round')
         elif 'highway' in tags and tags['highway'] == 'secondary':
             has_secondary = True
             ax.plot(x_coords, y_coords, color='#94A3B8', linewidth=1.8, linestyle='-')
+        elif 'highway' in tags and tags['highway'] == 'tertiary':
+            ax.plot(x_coords, y_coords, color='#A16207', linewidth=1.0, linestyle='-', alpha=0.7)
         elif 'railway' in tags and tags['railway'] == 'rail':
             # Railway visual (two lines overlayed to look like train tracks)
             ax.plot(x_coords, y_coords, color='#475569', linewidth=3.5)

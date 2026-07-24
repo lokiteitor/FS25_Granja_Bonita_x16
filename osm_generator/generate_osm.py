@@ -27,6 +27,45 @@ def local_to_global(x, y):
 def main():
     print("=== Generating OSM data for FS25 map ===")
     
+    # 0. Load DEM once for elevation checks
+    Image.MAX_IMAGE_PIXELS = None
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    dem_path = os.path.normpath(os.path.join(script_dir, "../dem_generator/dem_new_12k.png"))
+    
+    if not os.path.exists(dem_path):
+        print(f"Error: DEM file not found at {dem_path}")
+        return
+        
+    img = Image.open(dem_path)
+    data = np.array(img, dtype=np.float32)
+    playable = data[2048:10240, 2048:10240]
+    
+    # Forest checking helpers (Elevation >= 370m is forest)
+    def is_in_forest(x, y, buffer_m=5.0):
+        # The forest is strictly South/East of the Southern Link Road.
+        # If the point is North/West of the road, it is not in the forest.
+        if y < get_road_y(x) - buffer_m:
+            return False
+            
+        x_min = max(0, int(x - buffer_m))
+        x_max = min(8191, int(x + buffer_m))
+        y_min = max(0, int(y - buffer_m))
+        y_max = min(8191, int(y + buffer_m))
+        
+        sub = playable[y_min:y_max+1, x_min:x_max+1]
+        if sub.size > 0 and np.any(sub >= 37000.0):
+            return True
+        return False
+
+    def get_forest_limit_y(x, y_start, y_end, buffer_m=5.0):
+        # Scan from y_start to y_end to find forest entry point, then step back by buffer_m
+        y_limit = y_end
+        for y in range(int(y_start), int(y_end) + 1):
+            if is_in_forest(x, float(y), buffer_m=buffer_m):
+                y_limit = float(y) - buffer_m
+                break
+        return y_limit
+
     # Pools
     nodes = {} # (x, y) -> node_id
     node_coords = {} # node_id -> (lat, lon)
@@ -117,18 +156,13 @@ def main():
     # 7. Primary Road (East-West)
     # Passing 15m north of Town (Y: 1024 - 15 = 1009)
     # Spans from X: 0 to X: 8192.
-    # We include X = 7103.0 as a node to connect the new primary road.
     xs_sec = [7118.0, 7278.0, 7438.0, 7598.0, 7758.0]
-    xs_primary_all = sorted([7103.0] + xs_sec)
+    xs_ter_v = [800.0, 1600.0, 2400.0, 3200.0, 4000.0, 4800.0, 5600.0, 6400.0]
+    xs_primary_all = sorted([7103.0] + xs_ter_v + xs_sec)
     primary_coords = [(0.0, 1009.0)] + [(x, 1009.0) for x in xs_primary_all] + [(8192.0, 1009.0)]
     add_way(primary_coords, {'highway': 'primary', 'name': 'Primary Road'})
 
     # 7b. New Southern-to-Western Primary Road
-    # - Horizontal from (0, 7650) to (5068, 7650)
-    # - Curve 1 (Bezier) to (5580.13, 7437.87)
-    # - Diagonal to (6890.87, 6127.13)
-    # - Curve 2 (Bezier) to (7103, 5615)
-    # - Vertical to (7103, 1009)
     def bezier_curve(p0, p1, p2, num_pts=10):
         pts = []
         for i in range(num_pts):
@@ -138,31 +172,59 @@ def main():
             pts.append((x, y))
         return pts
 
-    new_primary_coords = []
+    new_primary_coords_base = []
     # Segment 1: West edge to start of Curve 1
-    new_primary_coords.append((0.0, 7650.0))
-    new_primary_coords.append((5068.0, 7650.0))
+    new_primary_coords_base.append((0.0, 7650.0))
+    new_primary_coords_base.append((5068.0, 7650.0))
     
     # Curve 1
     c1_pts = bezier_curve((5068.0, 7650.0), (5368.0, 7650.0), (5580.13, 7437.87))
-    new_primary_coords.extend(c1_pts[1:-1])
+    new_primary_coords_base.extend(c1_pts[1:-1])
     
     # Segment 2: end of Curve 1 to start of Curve 2
-    new_primary_coords.append((5580.13, 7437.87))
-    new_primary_coords.append((6890.87, 6127.13))
+    new_primary_coords_base.append((5580.13, 7437.87))
+    new_primary_coords_base.append((6890.87, 6127.13))
     
     # Curve 2
     c2_pts = bezier_curve((6890.87, 6127.13), (7103.0, 5915.0), (7103.0, 5615.0))
-    new_primary_coords.extend(c2_pts[1:-1])
+    new_primary_coords_base.extend(c2_pts[1:-1])
     
     # Segment 3: end of Curve 2 to connection with northern primary road
-    new_primary_coords.append((7103.0, 5615.0))
-    new_primary_coords.append((7103.0, 1536.0)) # Intersection with horiz secondary 3
-    new_primary_coords.append((7103.0, 1280.0)) # Intersection with horiz secondary 2
-    new_primary_coords.append((7103.0, 1024.0)) # Intersection with horiz secondary 1
-    new_primary_coords.append((7103.0, 1009.0)) # Intersection with northern primary road
-    
-    add_way(new_primary_coords, {'highway': 'primary', 'name': 'Southern Link Road'})
+    new_primary_coords_base.append((7103.0, 5615.0))
+    new_primary_coords_base.append((7103.0, 1536.0))
+    new_primary_coords_base.append((7103.0, 1280.0))
+    new_primary_coords_base.append((7103.0, 1024.0))
+    new_primary_coords_base.append((7103.0, 1009.0))
+
+    # Set up interpolation variables for the road shape
+    road_pts_filtered = [pt for pt in new_primary_coords_base if pt[0] < 7103.0]
+    road_pts_filtered.sort(key=lambda pt: pt[0])
+    road_xs_interp = [pt[0] for pt in road_pts_filtered] + [7103.0]
+    road_ys_interp = [pt[1] for pt in road_pts_filtered] + [5615.0]
+
+    def get_road_y(x):
+        if x >= 7103.0:
+            return 5615.0
+        return np.interp(x, road_xs_interp, road_ys_interp)
+
+    road_pts_sorted_by_y = sorted(new_primary_coords_base, key=lambda pt: pt[1])
+    road_xs_y = [pt[0] for pt in road_pts_sorted_by_y]
+    road_ys_y = [pt[1] for pt in road_pts_sorted_by_y]
+
+    # Collect and insert road-grid intersection nodes
+    ys_ter_h = [1809.0, 2609.0, 3409.0, 4209.0, 5009.0, 5809.0, 6609.0, 7409.0]
+    intersections = []
+    for x in xs_ter_v:
+        y_int = get_road_y(x)
+        intersections.append((x, y_int))
+    for y in ys_ter_h:
+        x_int = np.interp(y, road_ys_y, road_xs_y)
+        intersections.append((x_int, y))
+
+    # Add intersections to primary road way, sort by X-Y (strictly monotonic along road path)
+    all_road_nodes = list(set(new_primary_coords_base + intersections))
+    all_road_nodes.sort(key=lambda pt: pt[0] - pt[1])
+    add_way(all_road_nodes, {'highway': 'primary', 'name': 'Southern Link Road'})
 
     # 8. Railway
     # Passing 15m north of Primary Road (Y: 1009 - 15 = 994)
@@ -171,20 +233,450 @@ def main():
     add_way(rail_coords, {'railway': 'rail', 'name': 'Railway'})
 
     # 9. Secondary Roads (Grid in Town)
-    # Vertical secondary roads from Y: 1009 (connecting to Primary) down to Y: 1536
-    # Intersection points with horizontal roads are at Y: 1024, 1280, 1536
     ys_sec_v = [1009.0, 1024.0, 1280.0, 1536.0]
     for x in xs_sec:
         v_coords = [(x, y) for y in ys_sec_v]
         add_way(v_coords, {'highway': 'secondary'})
 
-    # Horizontal secondary roads inside the Town at Y: 1024, 1280, 1536
-    # Extended to X = 7103.0 to connect to the new primary road
     xs_sec_h = [7103.0] + xs_sec
     ys_sec_h = [1024.0, 1280.0, 1536.0]
     for y in ys_sec_h:
         h_coords = [(x, y) for x in xs_sec_h]
         add_way(h_coords, {'highway': 'secondary'})
+
+    # 9b. Tertiary Roads (PLSS Dirt Grid) - Stopping before entering forests
+    # Vertical tertiary roads
+    for x in xs_ter_v:
+        y_int = get_road_y(x)
+        v_pts = [(x, 1009.0)]
+        for y in ys_ter_h:
+            if y < y_int - 0.1:
+                if is_in_forest(x, y, buffer_m=5.0):
+                    break
+                v_pts.append((x, y))
+        
+        if not is_in_forest(x, y_int, buffer_m=5.0):
+            v_pts.append((x, y_int))
+        else:
+            y_forest_limit = get_forest_limit_y(x, 1009.0, y_int, buffer_m=5.0)
+            if y_forest_limit > v_pts[-1][1] + 1.0:
+                v_pts.append((x, y_forest_limit))
+                
+        v_pts.sort(key=lambda pt: pt[1])
+        add_way(v_pts, {'highway': 'tertiary'})
+
+    # Horizontal tertiary roads
+    for y in ys_ter_h:
+        x_int = np.interp(y, road_ys_y, road_xs_y)
+        h_pts = [(0.0, y)]
+        for x in xs_ter_v:
+            if x < x_int - 0.1:
+                if is_in_forest(x, y, buffer_m=5.0):
+                    break
+                h_pts.append((x, y))
+                
+        if not is_in_forest(x_int, y, buffer_m=5.0):
+            h_pts.append((x_int, y))
+        else:
+            x_forest_limit = x_int
+            for x_scan in range(0, int(x_int) + 1):
+                if is_in_forest(float(x_scan), y, buffer_m=5.0):
+                    x_forest_limit = float(x_scan) - 5.0
+                    break
+            if x_forest_limit > h_pts[-1][0] + 1.0:
+                h_pts.append((x_forest_limit, y))
+                
+        h_pts.sort(key=lambda pt: pt[0])
+        add_way(h_pts, {'highway': 'tertiary'})
+
+    # 9c. PLSS Farmlands & Random Forests
+    xs_grid_lines = [0.0] + xs_ter_v + [7103.0]
+    ys_grid_lines = [1009.0] + ys_ter_h + [7650.0]
+    
+    # 1. Select 10 random cells to place forests
+    import random
+    candidates = []
+    for i in range(len(xs_grid_lines) - 1):
+        x_a = xs_grid_lines[i]
+        x_b = xs_grid_lines[i+1]
+        for j in range(len(ys_grid_lines) - 1):
+            y_a = ys_grid_lines[j]
+            y_b = ys_grid_lines[j+1]
+            
+            # Forest box size (10 hectares = 316.227m x 316.227m)
+            forest_w = 316.227
+            x_f_start = x_a + 5.0
+            x_f_end = x_f_start + forest_w
+            y_f_start = y_a + 5.0
+            y_f_end = y_f_start + forest_w
+            
+            if x_f_end > 7098.0:
+                continue
+                
+            # Check road clearance
+            road_clear = True
+            for x in np.linspace(x_f_start, x_f_end, 5):
+                if y_f_end > get_road_y(x) - 5.0:
+                    road_clear = False
+                    break
+            if not road_clear:
+                continue
+                
+            # Check forest clearance (don't overlay on the existing mountain/hill forests)
+            corners_clear = True
+            corners = [
+                (x_f_start, y_f_start),
+                (x_f_end, y_f_start),
+                (x_f_end, y_f_end),
+                (x_f_start, y_f_end)
+            ]
+            for cx, cy in corners:
+                if is_in_forest(cx, cy, buffer_m=5.0):
+                    corners_clear = False
+                    break
+            if not corners_clear:
+                continue
+                
+            candidates.append((i, j))
+            
+    print(f"   Found {len(candidates)} candidate cells for 10-hectare random forests.")
+    # Deterministic seeded selection
+    rng = random.Random(42)
+    candidates.sort()
+    rng.shuffle(candidates)
+    selected_cells = set(candidates[:10])
+    
+    field_idx = 1
+    forest_idx = 1
+    
+    print("   Generating PLSS farmlands (fields) and 10 random forests...")
+    for i in range(len(xs_grid_lines) - 1):
+        x_a = xs_grid_lines[i]
+        x_b = xs_grid_lines[i+1]
+        for j in range(len(ys_grid_lines) - 1):
+            y_a = ys_grid_lines[j]
+            y_b = ys_grid_lines[j+1]
+            
+            if (i, j) in selected_cells:
+                # Add 10-hectare forest at the top-left of the cell
+                forest_w = 316.227
+                x_f_start = x_a + 5.0
+                x_f_end = x_f_start + forest_w
+                y_f_start = y_a + 5.0
+                y_f_end = y_f_start + forest_w
+                
+                forest_coords = [
+                    (x_f_start, y_f_start),
+                    (x_f_end, y_f_start),
+                    (x_f_end, y_f_end),
+                    (x_f_start, y_f_end),
+                    (x_f_start, y_f_start)
+                ]
+                add_way(forest_coords, {
+                    'natural': 'wood',
+                    'landuse': 'farmyard',
+                    'leaf_type': 'broadleave',
+                    'name': f'Random Forest {forest_idx}'
+                })
+                forest_idx += 1
+                
+                # Split remaining cell area into two fields: Right and Bottom
+                # 1. Right Field
+                xs_sample = np.linspace(x_f_end + 10.0, x_b - 5.0, 5)
+                poly_top = []
+                poly_bottom = []
+                valid = True
+                for x in xs_sample:
+                    y_t = y_a + 5.0
+                    y_b_limit = min(y_f_end, get_road_y(x) - 5.0)
+                    y_b_limit = get_forest_limit_y(x, y_t, y_b_limit, buffer_m=5.0)
+                    if x < 5.0 or x > 7098.0:
+                        valid = False
+                        break
+                    if y_t + 15.0 > y_b_limit:
+                        valid = False
+                        break
+                    poly_top.append((x, y_t))
+                    poly_bottom.append((x, y_b_limit))
+                if valid:
+                    coords = poly_top + list(reversed(poly_bottom)) + [poly_top[0]]
+                    add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
+                    field_idx += 1
+                    
+                # 2. Bottom Field
+                xs_sample = np.linspace(x_a + 5.0, x_b - 5.0, 5)
+                poly_top = []
+                poly_bottom = []
+                valid = True
+                for x in xs_sample:
+                    y_t = y_f_end + 10.0
+                    y_b_limit = min(y_b - 5.0, get_road_y(x) - 5.0)
+                    y_b_limit = get_forest_limit_y(x, y_t, y_b_limit, buffer_m=5.0)
+                    if x < 5.0 or x > 7098.0:
+                        valid = False
+                        break
+                    if y_t + 15.0 > y_b_limit:
+                        valid = False
+                        break
+                    poly_top.append((x, y_t))
+                    poly_bottom.append((x, y_b_limit))
+                if valid:
+                    coords = poly_top + list(reversed(poly_bottom)) + [poly_top[0]]
+                    add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
+                    field_idx += 1
+            else:
+                # Normal full field in cell
+                xs_sample = np.linspace(x_a + 5.0, x_b - 5.0, 5)
+                poly_top = []
+                poly_bottom = []
+                valid = True
+                for x in xs_sample:
+                    y_t = y_a + 5.0
+                    y_b_limit = min(y_b - 5.0, get_road_y(x) - 5.0)
+                    y_b_limit = get_forest_limit_y(x, y_t, y_b_limit, buffer_m=5.0)
+                    if x < 5.0 or x > 7098.0:
+                        valid = False
+                        break
+                    if y_t < 1014.0:
+                        y_t = 1014.0
+                    if is_in_forest(x, y_t, buffer_m=5.0):
+                        valid = False
+                        break
+                    if y_t + 15.0 > y_b_limit:
+                        valid = False
+                        break
+                    poly_top.append((x, y_t))
+                    poly_bottom.append((x, y_b_limit))
+                if valid:
+                    coords = poly_top + list(reversed(poly_bottom)) + [poly_top[0]]
+                    add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
+                    field_idx += 1
+                    
+    print(f"   Added {field_idx - 1} PLSS fields and {forest_idx - 1} random forests.")
+
+    # 9d. Northern Farmlands & Tertiary Roads (Horizontal layout, 15m borders)
+    def pack_strip_horiz(y_start, y_end, seed):
+        import random
+        rng = random.Random(seed)
+        fields = []
+        roads = []
+        
+        x_curr = 15.0
+        field_h = y_end - y_start
+        
+        # We select sizes from [5, 10, 20]
+        # To have a good mix, we weight them: 5 ha (weight 2), 10 ha (weight 2), 20 ha (weight 1)
+        choices = [5, 5, 10, 10, 20]
+        
+        while True:
+            size = rng.choice(choices)
+            w = (size * 10000.0) / field_h
+            
+            # Check if this field fits (needs at least w + 10m before 8177.0)
+            if x_curr + w + 10.0 > 8177.0:
+                # Last field: adjust to fill remaining space up to 8177.0
+                w_rem = 8177.0 - x_curr
+                if w_rem >= 50.0:
+                    actual_size = (w_rem * field_h) / 10000.0
+                    fields.append((x_curr, x_curr + w_rem, actual_size))
+                break
+                
+            fields.append((x_curr, x_curr + w, size))
+            # Vertical road in the gap (centered)
+            roads.append(x_curr + w + 5.0)
+            x_curr += w + 10.0
+            
+        return fields, roads
+
+    print("   Generating Northern Farmlands (Horizontal standard, 15m borders)...")
+    
+    # Define 5 strips of height 180m
+    strips = [
+        (15.0, 195.0),
+        (205.0, 385.0),
+        (395.0, 575.0),
+        (585.0, 765.0),
+        (775.0, 955.0)
+    ]
+    
+    # Add horizontal boundary roads & horizontal roads in the gaps
+    # Boundary North
+    add_way([(15.0, 15.0), (8177.0, 15.0)], {'highway': 'tertiary'})
+    # Gaps horizontal roads
+    add_way([(0.0, 200.0), (8192.0, 200.0)], {'highway': 'tertiary'})
+    add_way([(0.0, 390.0), (8192.0, 390.0)], {'highway': 'tertiary'})
+    add_way([(0.0, 580.0), (8192.0, 580.0)], {'highway': 'tertiary'})
+    add_way([(0.0, 770.0), (8192.0, 770.0)], {'highway': 'tertiary'})
+    
+    # Boundary West (15m offset)
+    add_way([(15.0, 15.0), (15.0, 1009.0)], {'highway': 'tertiary'})
+    # Boundary East (15m offset, which is 8177.0)
+    add_way([(8177.0, 15.0), (8177.0, 1009.0)], {'highway': 'tertiary'})
+
+    # Generate fields & vertical roads for each strip
+    for s_idx, (y_s, y_e) in enumerate(strips):
+        fields, roads = pack_strip_horiz(y_s, y_e, seed=(303 + s_idx))
+        
+        # Add fields
+        for f_idx, (x_start, x_end, size) in enumerate(fields):
+            coords = [
+                (x_start, y_s),
+                (x_end, y_s),
+                (x_end, y_e),
+                (x_start, y_e),
+                (x_start, y_s)
+            ]
+            add_way(coords, {'landuse': 'farmland', 'name': f'Field N{s_idx+1}_{f_idx+1} ({size:.1f} ha)'})
+            
+        # Add vertical roads in gaps connecting adjacent horizontal roads
+        for rx in roads:
+            if s_idx == 0:
+                # North border to Gap 1
+                add_way([(rx, 15.0), (rx, 200.0)], {'highway': 'tertiary'})
+            elif s_idx == 1:
+                # Gap 1 to Gap 2
+                add_way([(rx, 200.0), (rx, 390.0)], {'highway': 'tertiary'})
+            elif s_idx == 2:
+                # Gap 2 to Gap 3
+                add_way([(rx, 390.0), (rx, 580.0)], {'highway': 'tertiary'})
+            elif s_idx == 3:
+                # Gap 3 to Gap 4
+                add_way([(rx, 580.0), (rx, 770.0)], {'highway': 'tertiary'})
+            elif s_idx == 4:
+                # Gap 4 to primary road (crosses railway at 994)
+                add_way([(rx, 770.0), (rx, 994.0), (rx, 1009.0)], {'highway': 'tertiary'})
+
+    # 9e. Eastern Farmlands & Tertiary Roads (Vertical layout, 15m borders)
+    print("   Generating Eastern Farmlands (Vertical 30 and 45 hectares) and tertiary roads...")
+    
+    col_w = 346.3
+    col_xs = [
+        (7118.0, 7464.3),
+        (7474.3, 7820.6),
+        (7830.6, 8177.0)
+    ]
+    vertical_gaps = [7469.3, 7825.6]
+    
+    # Pack fields for each column, keeping track of last horizontal road Y
+    import random
+    rng = random.Random(404)
+    col_last_ys = [1536.0, 1536.0, 1536.0]
+    
+    for c_idx, (x_s, x_e) in enumerate(col_xs):
+        y_curr = 1551.0
+        choices = [30, 30, 45]
+        f_idx = 1
+        
+        # Determine column road boundaries
+        x_road_start = 7103.0 if c_idx == 0 else vertical_gaps[c_idx - 1]
+        x_road_end = 8177.0 if c_idx == 2 else vertical_gaps[c_idx]
+        
+        while True:
+            # Get forest limit Y for this column width
+            col_y_limit = min(
+                min(get_road_y(x) - 15.0, get_forest_limit_y(x, y_curr, 8192.0, buffer_m=15.0))
+                for x in np.linspace(x_s, x_e, 5)
+            )
+            
+            size = rng.choice(choices)
+            h = (size * 10000.0) / col_w
+            
+            if y_curr + h + 10.0 > col_y_limit:
+                # Discard the last field to avoid broken shapes bordering the forest
+                break
+                
+            # Place field
+            coords = [
+                (x_s, y_curr),
+                (x_e, y_curr),
+                (x_e, y_curr + h),
+                (x_s, y_curr + h),
+                (x_s, y_curr)
+            ]
+            add_way(coords, {'landuse': 'farmland', 'name': f'Field E{c_idx+1}_{f_idx} ({size:.1f} ha)'})
+            
+            # Add horizontal road in the gap (restricted strictly to the column width)
+            y_road = y_curr + h + 5.0
+            add_way([(x_road_start, y_road), (x_road_end, y_road)], {'highway': 'tertiary'})
+            
+            col_last_ys[c_idx] = y_road
+            
+            y_curr += h + 10.0
+            f_idx += 1
+
+    # Add vertical roads in the column gaps, trimmed to the last horizontal road of the adjacent columns
+    for g_idx, rx in enumerate(vertical_gaps):
+        # Gap road goes down to the maximum of the last road in its left and right columns
+        y_lim = max(col_last_ys[g_idx], col_last_ys[g_idx + 1])
+        add_way([(rx, 1536.0), (rx, y_lim)], {'highway': 'tertiary'})
+        
+    # Boundary East road extension down to the last road in column 2
+    y_lim_east = col_last_ys[2]
+    add_way([(8177.0, 1536.0), (8177.0, y_lim_east)], {'highway': 'tertiary'})
+
+    # 9f. Southern Farmlands & Tertiary Roads (Horizontal layout, 15m borders)
+    print("   Generating Southern Farmlands (Horizontal 10 hectares) and tertiary roads...")
+    
+    def pack_south_pocket(x_start, x_end, seed, p_name):
+        y_s1, y_e1 = 7665.0, 7916.0
+        y_s2, y_e2 = 7926.0, 8177.0
+        
+        field_h = 251.0
+        w_10ha = 398.4
+        
+        # Add horizontal roads at Y = 7921.0 and Y = 8177.0
+        add_way([(x_start, 7921.0), (x_end, 7921.0)], {'highway': 'tertiary'})
+        add_way([(x_start, 8177.0), (x_end, 8177.0)], {'highway': 'tertiary'})
+        
+        # Add boundary vertical roads
+        add_way([(x_start, 7650.0), (x_start, 8177.0)], {'highway': 'tertiary'})
+        add_way([(x_end, 7650.0), (x_end, 8177.0)], {'highway': 'tertiary'})
+        
+        # Pack fields
+        import random
+        rng = random.Random(seed)
+        
+        for strip_idx, (y_s, y_e) in enumerate([(y_s1, y_e1), (y_s2, y_e2)]):
+            x_curr = x_start
+            f_idx = 1
+            roads = []
+            
+            while True:
+                if x_curr + w_10ha + 10.0 > x_end:
+                    w_rem = x_end - x_curr
+                    if w_rem >= 100.0:
+                        actual_size = (w_rem * field_h) / 10000.0
+                        coords = [
+                            (x_curr, y_s),
+                            (x_curr + w_rem, y_s),
+                            (x_curr + w_rem, y_e),
+                            (x_curr, y_e),
+                            (x_curr, y_s)
+                        ]
+                        add_way(coords, {'landuse': 'farmland', 'name': f'Field S_{p_name}{strip_idx+1}_{f_idx} ({actual_size:.1f} ha)'})
+                    break
+                    
+                coords = [
+                    (x_curr, y_s),
+                    (x_curr + w_10ha, y_s),
+                    (x_curr + w_10ha, y_e),
+                    (x_curr, y_e),
+                    (x_curr, y_s)
+                ]
+                add_way(coords, {'landuse': 'farmland', 'name': f'Field S_{p_name}{strip_idx+1}_{f_idx} (10.0 ha)'})
+                
+                roads.append(x_curr + w_10ha + 5.0)
+                x_curr += w_10ha + 10.0
+                f_idx += 1
+                
+            if strip_idx == 0:
+                for rx in roads:
+                    add_way([(rx, 7650.0), (rx, 8177.0)], {'highway': 'tertiary'})
+
+    # Pocket A: between Yard 7 and bottom-left forest
+    pack_south_pocket(540.0, 1981.8, seed=505, p_name="A")
+    # Pocket B: between bottom-left forest and Southern Link Road curve 1
+    pack_south_pocket(2675.4, 5053.0, seed=606, p_name="B")
 
     # 10. Forest polygons (elevations >= 370m)
     def get_border(pt):
@@ -231,18 +723,6 @@ def main():
         return path
 
     def get_forest_polygons():
-        Image.MAX_IMAGE_PIXELS = None
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        dem_path = os.path.normpath(os.path.join(script_dir, "../dem_generator/dem_new_12k.png"))
-        
-        if not os.path.exists(dem_path):
-            print(f"Error: DEM file not found at {dem_path}")
-            return []
-            
-        img = Image.open(dem_path)
-        data = np.array(img, dtype=np.float32)
-        playable = data[2048:10240, 2048:10240]
-        
         grid_size = 257
         idx = np.linspace(0, 8191, grid_size, dtype=int)
         playable_sub = playable[idx, :][:, idx]
@@ -266,12 +746,20 @@ def main():
     print("   Extracting and generating forest areas from DEM (elevation >= 370m)...")
     forest_polys = get_forest_polygons()
     for i, poly in enumerate(forest_polys):
-        add_way(poly, {
+        # Clip the forest polygons to stay South/East of the Southern Link Road
+        clipped_poly = []
+        for x, y in poly:
+            road_y = get_road_y(x)
+            if y < road_y:
+                y = road_y
+            clipped_poly.append((x, y))
+            
+        add_way(clipped_poly, {
             'natural': 'wood',
             'landuse': 'farmyard',
             'leaf_type': 'needleleave'
         })
-        print(f"   Added forest way {i+1} with {len(poly)} nodes.")
+        print(f"   Added forest way {i+1} with {len(clipped_poly)} nodes.")
 
     # Generate XML
     osm_elem = ET.Element('osm', version='0.6', generator='Antigravity')
@@ -285,7 +773,6 @@ def main():
     })
 
     # Add nodes
-    # Sort nodes by id
     sorted_node_ids = sorted(node_coords.keys())
     for nid in sorted_node_ids:
         lat, lon = node_coords[nid]
