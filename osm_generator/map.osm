@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="utf-8"?>
+<osm version="0.6" generator="Antigravity">
+  <bounds minlat="43.1088283205" minlon="-95.1956038394" maxlat="43.1825563942" maxlon="-95.0945534815"/>
+  <node id="1" lat="43.1135533252" lon="-95.1952954582" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="2" lat="43.1135533252" lon="-95.1891278338" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="3" lat="43.1090533207" lon="-95.1891278338" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="4" lat="43.1090533207" lon="-95.1952954582" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="5" lat="43.1733403850" lon="-95.0999069794" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="6" lat="43.1733403850" lon="-95.0951702439" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="7" lat="43.1687323804" lon="-95.0951702439" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="8" lat="43.1687323804" lon="-95.0999069794" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="9" lat="43.1719723836" lon="-95.0999069794" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="10" lat="43.1719723836" lon="-95.0954662899" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="11" lat="43.1687323804" lon="-95.0954662899" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="12" lat="43.1703973821" lon="-95.0954662899" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="13" lat="43.1703973821" lon="-95.0920864317" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="14" lat="43.1703073820" lon="-95.0920864317" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="15" lat="43.1703073820" lon="-95.0954662899" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="16" lat="43.1733403850" lon="-95.1078015386" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="17" lat="43.1687323804" lon="-95.1078015386" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="18" lat="43.1734753851" lon="-95.1956038394" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="19" lat="43.1734753851" lon="-95.1079865674" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="20" lat="43.1734753851" lon="-95.1078015386" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="21" lat="43.1734753851" lon="-95.1058278988" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="22" lat="43.1734753851" lon="-95.1038542590" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="23" lat="43.1734753851" lon="-95.1018806192" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="24" lat="43.1734753851" lon="-95.0999069794" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="25" lat="43.1734753851" lon="-95.0945534815" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="26" lat="43.1137063254" lon="-95.1956038394" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="27" lat="43.1137063254" lon="-95.1330887986" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="28" lat="43.1137298954" lon="-95.1322798302" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="29" lat="43.1138006055" lon="-95.1314976246" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="30" lat="43.1139184556" lon="-95.1307421820" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="31" lat="43.1140834457" lon="-95.1300135023" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="32" lat="43.1142955760" lon="-95.1293115855" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="33" lat="43.1145548462" lon="-95.1286364317" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="34" lat="43.1148612565" lon="-95.1279880408" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="35" lat="43.1152148069" lon="-95.1273664128" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="36" lat="43.1156154973" lon="-95.1267715477" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="37" lat="43.1274121691" lon="-95.1106032437" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="38" lat="43.1278461928" lon="-95.1100540647" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="39" lat="43.1282997433" lon="-95.1095694950" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="40" lat="43.1287728204" lon="-95.1091495346" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="41" lat="43.1292654243" lon="-95.1087941835" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="42" lat="43.1297775548" lon="-95.1085034417" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="43" lat="43.1303092120" lon="-95.1082773092" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="44" lat="43.1308603959" lon="-95.1081157860" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="45" lat="43.1314311064" lon="-95.1080188720" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="46" lat="43.1320213437" lon="-95.1079865674" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="47" lat="43.1687323804" lon="-95.1079865674" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="48" lat="43.1710363827" lon="-95.1079865674" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="49" lat="43.1733403850" lon="-95.1079865674" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="50" lat="43.1736103853" lon="-95.1956038394" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="51" lat="43.1736103853" lon="-95.0945534815" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="52" lat="43.1710363827" lon="-95.1078015386" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="53" lat="43.1733403850" lon="-95.1058278988" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="54" lat="43.1710363827" lon="-95.1058278988" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="55" lat="43.1687323804" lon="-95.1058278988" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="56" lat="43.1733403850" lon="-95.1038542590" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="57" lat="43.1710363827" lon="-95.1038542590" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="58" lat="43.1687323804" lon="-95.1038542590" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="59" lat="43.1733403850" lon="-95.1018806192" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="60" lat="43.1710363827" lon="-95.1018806192" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="61" lat="43.1687323804" lon="-95.1018806192" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="62" lat="43.1710363827" lon="-95.0999069794" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="63" lat="43.1088283205" lon="-95.1701013172" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="64" lat="43.1091163208" lon="-95.1701227398" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="65" lat="43.1094043211" lon="-95.1701535923" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="66" lat="43.1096923214" lon="-95.1702395775" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="67" lat="43.1099500058" lon="-95.1703412499" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="68" lat="43.1099803216" lon="-95.1703533954" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="69" lat="43.1102683219" lon="-95.1704635600" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="70" lat="43.1105563222" lon="-95.1705683537" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="71" lat="43.1108443225" lon="-95.1706675583" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="72" lat="43.1110783227" lon="-95.1707359779" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="73" lat="43.1111323228" lon="-95.1707509675" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="74" lat="43.1114203231" lon="-95.1708274392" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="75" lat="43.1117083234" lon="-95.1708929179" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="76" lat="43.1119963237" lon="-95.1709477831" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="77" lat="43.1122843239" lon="-95.1709728146" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="78" lat="43.1125723242" lon="-95.1709600126" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="79" lat="43.1128603245" lon="-95.1708891559" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="80" lat="43.1131483248" lon="-95.1707688719" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="81" lat="43.1132203249" lon="-95.1707359779" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="82" lat="43.1134363251" lon="-95.1705950036" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="83" lat="43.1137243254" lon="-95.1704070379" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="84" lat="43.1138814165" lon="-95.1703412499" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="85" lat="43.1140123257" lon="-95.1702425679" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="86" lat="43.1143003260" lon="-95.1701833587" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="87" lat="43.1145883263" lon="-95.1702754619" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="88" lat="43.1147803264" lon="-95.1703412499" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="89" lat="43.1148763265" lon="-95.1703532114" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="90" lat="43.1149723266" lon="-95.1703412499" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="91" lat="43.1151643268" lon="-95.1702096739" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="92" lat="43.1152320916" lon="-95.1699465219" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="93" lat="43.1151643268" lon="-95.1698747532" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="94" lat="43.1148763265" lon="-95.1696998170" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="95" lat="43.1146603263" lon="-95.1695517940" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="96" lat="43.1145883263" lon="-95.1695202157" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="97" lat="43.1143003260" lon="-95.1692177934" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="98" lat="43.1142789926" lon="-95.1691570660" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="99" lat="43.1141059258" lon="-95.1687623381" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="100" lat="43.1140123257" lon="-95.1685570795" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="101" lat="43.1139483256" lon="-95.1683676101" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="102" lat="43.1137837540" lon="-95.1679728821" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="103" lat="43.1137243254" lon="-95.1678588496" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="104" lat="43.1135756801" lon="-95.1675781542" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="105" lat="43.1134363251" lon="-95.1673628480" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="106" lat="43.1133100092" lon="-95.1671834262" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="107" lat="43.1131483248" lon="-95.1669829295" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="108" lat="43.1129829913" lon="-95.1667886983" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="109" lat="43.1128603245" lon="-95.1666490253" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="110" lat="43.1126443243" lon="-95.1663939703" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="111" lat="43.1125723242" lon="-95.1663138806" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="112" lat="43.1123208954" lon="-95.1659992423" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="113" lat="43.1122843239" lon="-95.1659582316" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="114" lat="43.1120004380" lon="-95.1656045144" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="115" lat="43.1119963237" lon="-95.1656000792" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="116" lat="43.1117083234" lon="-95.1652627377" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="117" lat="43.1116677079" lon="-95.1652097864" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="118" lat="43.1114203231" lon="-95.1649342992" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="119" lat="43.1113208944" lon="-95.1648150585" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="120" lat="43.1111323228" lon="-95.1646082962" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="121" lat="43.1109648808" lon="-95.1644203305" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="122" lat="43.1108443225" lon="-95.1642887545" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="123" lat="43.1106003693" lon="-95.1640256025" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="124" lat="43.1105563222" lon="-95.1639776449" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="125" lat="43.1102683219" lon="-95.1636855893" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="126" lat="43.1102081428" lon="-95.1636308746" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="127" lat="43.1099803216" lon="-95.1634129518" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="128" lat="43.1097630583" lon="-95.1632361466" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="129" lat="43.1096923214" lon="-95.1631726272" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="130" lat="43.1094043211" lon="-95.1629823929" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="131" lat="43.1091163208" lon="-95.1628510462" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="132" lat="43.1090683207" lon="-95.1628414186" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="133" lat="43.1088283205" lon="-95.1627865953" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="134" lat="43.1088283205" lon="-95.1282283062" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="135" lat="43.1091163208" lon="-95.1281714146" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="136" lat="43.1094043211" lon="-95.1281454727" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="137" lat="43.1096923214" lon="-95.1281508412" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="138" lat="43.1099803216" lon="-95.1281793696" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="139" lat="43.1102683219" lon="-95.1282190933" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="140" lat="43.1105563222" lon="-95.1282578281" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="141" lat="43.1108443225" lon="-95.1282957970" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="142" lat="43.1111323228" lon="-95.1283397278" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="143" lat="43.1114203231" lon="-95.1283973487" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="144" lat="43.1117083234" lon="-95.1284758811" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="145" lat="43.1117751806" lon="-95.1285000861" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="146" lat="43.1119963237" lon="-95.1285858098" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="147" lat="43.1122843239" lon="-95.1287303441" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="148" lat="43.1125723242" lon="-95.1288926918" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="149" lat="43.1125761642" lon="-95.1288948140" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="150" lat="43.1128603245" lon="-95.1290607792" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="151" lat="43.1131483248" lon="-95.1292069245" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="152" lat="43.1133643250" lon="-95.1292895420" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="153" lat="43.1134363251" lon="-95.1293182495" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="154" lat="43.1137243254" lon="-95.1293783558" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="155" lat="43.1140123257" lon="-95.1293735809" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="156" lat="43.1143003260" lon="-95.1293107354" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="157" lat="43.1143565211" lon="-95.1292895420" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="158" lat="43.1145883263" lon="-95.1292027018" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="159" lat="43.1148763265" lon="-95.1290693536" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="160" lat="43.1151643268" lon="-95.1289337309" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="161" lat="43.1152603269" lon="-95.1288948140" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="162" lat="43.1154523271" lon="-95.1288158684" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="163" lat="43.1157403274" lon="-95.1287217410" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="164" lat="43.1160283277" lon="-95.1286451570" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="165" lat="43.1163163280" lon="-95.1285852235" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="166" lat="43.1166043283" lon="-95.1285488727" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="167" lat="43.1168923286" lon="-95.1285400585" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="168" lat="43.1171803288" lon="-95.1285369274" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="169" lat="43.1174683291" lon="-95.1285308441" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="170" lat="43.1177563294" lon="-95.1285276252" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="171" lat="43.1180443297" lon="-95.1285124213" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="172" lat="43.1181677584" lon="-95.1285000861" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="173" lat="43.1183323300" lon="-95.1284841375" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="174" lat="43.1186203303" lon="-95.1284367807" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="175" lat="43.1189083306" lon="-95.1283599023" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="176" lat="43.1191963309" lon="-95.1282241597" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="177" lat="43.1193502620" lon="-95.1281053581" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="178" lat="43.1194843311" lon="-95.1279704511" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="179" lat="43.1196545131" lon="-95.1277106302" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="180" lat="43.1197723314" lon="-95.1274319987" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="181" lat="43.1198098967" lon="-95.1273159022" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="182" lat="43.1198875316" lon="-95.1269211742" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="183" lat="43.1199304955" lon="-95.1265264463" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="184" lat="43.1199549658" lon="-95.1261317183" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="185" lat="43.1199753480" lon="-95.1257369904" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="186" lat="43.1200013153" lon="-95.1253422624" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="187" lat="43.1200440736" lon="-95.1249475344" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="188" lat="43.1200603317" lon="-95.1248584023" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="189" lat="43.1201100584" lon="-95.1245528065" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="190" lat="43.1201962192" lon="-95.1241580785" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="191" lat="43.1202976277" lon="-95.1237633506" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="192" lat="43.1203483320" lon="-95.1235735775" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="193" lat="43.1204001721" lon="-95.1233686226" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="194" lat="43.1204933117" lon="-95.1229738946" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="195" lat="43.1205743322" lon="-95.1225791667" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="196" lat="43.1206322472" lon="-95.1221844387" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="197" lat="43.1206363323" lon="-95.1221428884" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="198" lat="43.1206728697" lon="-95.1217897107" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="199" lat="43.1207077742" lon="-95.1213949828" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="200" lat="43.1207469244" lon="-95.1210002548" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="201" lat="43.1208029440" lon="-95.1206055269" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="202" lat="43.1208928704" lon="-95.1202107989" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="203" lat="43.1209243326" lon="-95.1201174996" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="204" lat="43.1210342963" lon="-95.1198160709" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="205" lat="43.1212046869" lon="-95.1194213430" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="206" lat="43.1212123329" lon="-95.1194039285" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="207" lat="43.1213779968" lon="-95.1190266150" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="208" lat="43.1215003332" lon="-95.1186942125" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="209" lat="43.1215228723" lon="-95.1186318871" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="210" lat="43.1216325300" lon="-95.1182371591" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="211" lat="43.1217021601" lon="-95.1178424311" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="212" lat="43.1217425152" lon="-95.1174477032" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="213" lat="43.1217688447" lon="-95.1170529752" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="214" lat="43.1217883335" lon="-95.1166582473" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="215" lat="43.1218113735" lon="-95.1162635193" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="216" lat="43.1218472941" lon="-95.1158687913" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="217" lat="43.1218977289" lon="-95.1154740634" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="218" lat="43.1219702284" lon="-95.1150793354" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="219" lat="43.1220616184" lon="-95.1146846075" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="220" lat="43.1220763337" lon="-95.1146352665" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="221" lat="43.1221848877" lon="-95.1142898795" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="222" lat="43.1223256474" lon="-95.1138951515" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="223" lat="43.1223643340" lon="-95.1137978214" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="224" lat="43.1224890586" lon="-95.1135004236" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="225" lat="43.1226523343" lon="-95.1131406715" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="226" lat="43.1226692755" lon="-95.1131056956" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="227" lat="43.1228866396" lon="-95.1127109677" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="228" lat="43.1229403346" lon="-95.1126249873" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="229" lat="43.1231612280" lon="-95.1123162397" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="230" lat="43.1232283349" lon="-95.1122308931" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="231" lat="43.1235163352" lon="-95.1119249146" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="232" lat="43.1235202804" lon="-95.1119215117" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="233" lat="43.1238043355" lon="-95.1116923149" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="234" lat="43.1240539357" lon="-95.1115267838" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="235" lat="43.1240923358" lon="-95.1115017217" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="236" lat="43.1243803360" lon="-95.1113278657" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="237" lat="43.1246683363" lon="-95.1111505587" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="238" lat="43.1246981295" lon="-95.1111320558" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="239" lat="43.1249563366" lon="-95.1109581079" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="240" lat="43.1252443369" lon="-95.1107575703" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="241" lat="43.1252731369" lon="-95.1107373279" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="242" lat="43.1255323372" lon="-95.1105343249" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="243" lat="43.1257771374" lon="-95.1103425999" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="244" lat="43.1258203375" lon="-95.1103039852" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="245" lat="43.1261083378" lon="-95.1100386140" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="246" lat="43.1261894646" lon="-95.1099478719" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="247" lat="43.1263963381" lon="-95.1096561165" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="248" lat="43.1264503381" lon="-95.1095531440" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="249" lat="43.1266047954" lon="-95.1091584160" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="250" lat="43.1266843383" lon="-95.1089095658" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="251" lat="43.1267208757" lon="-95.1087636881" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="252" lat="43.1268241646" lon="-95.1083689601" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="253" lat="43.1269454034" lon="-95.1079742321" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="254" lat="43.1269723386" lon="-95.1078964827" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="255" lat="43.1270695617" lon="-95.1075795042" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="256" lat="43.1272008808" lon="-95.1071847762" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="257" lat="43.1272603389" lon="-95.1070117448" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="258" lat="43.1273289902" lon="-95.1067900482" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="259" lat="43.1274426823" lon="-95.1063953203" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="260" lat="43.1275414821" lon="-95.1060005923" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="261" lat="43.1275483392" lon="-95.1059662682" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="262" lat="43.1276137231" lon="-95.1056058644" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="263" lat="43.1276744366" lon="-95.1052111364" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="264" lat="43.1277346003" lon="-95.1048164084" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="265" lat="43.1278005341" lon="-95.1044216805" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="266" lat="43.1278363395" lon="-95.1042436659" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="267" lat="43.1278764589" lon="-95.1040269525" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="268" lat="43.1279644996" lon="-95.1036322246" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="269" lat="43.1280690670" lon="-95.1032374966" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="270" lat="43.1281243398" lon="-95.1030476275" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="271" lat="43.1281827953" lon="-95.1028427686" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="272" lat="43.1283012334" lon="-95.1024480407" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="273" lat="43.1284123401" lon="-95.1020730491" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="274" lat="43.1284181583" lon="-95.1020533127" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="275" lat="43.1285236804" lon="-95.1016585848" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="276" lat="43.1286093929" lon="-95.1012638568" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="277" lat="43.1286698641" lon="-95.1008691288" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="278" lat="43.1287003404" lon="-95.1005401889" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="279" lat="43.1287063093" lon="-95.1004744009" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="280" lat="43.1287182471" lon="-95.1000796729" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="281" lat="43.1287122782" lon="-95.0996849450" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="282" lat="43.1287003404" lon="-95.0994593861" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="283" lat="43.1286910997" lon="-95.0992902170" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="284" lat="43.1286607799" lon="-95.0988954890" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="285" lat="43.1286208920" lon="-95.0985007611" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="286" lat="43.1285678249" lon="-95.0981060331" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="287" lat="43.1285013928" lon="-95.0977113052" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="288" lat="43.1284225529" lon="-95.0973165772" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="289" lat="43.1284123401" lon="-95.0972672362" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="290" lat="43.1283317000" lon="-95.0969218492" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="291" lat="43.1282390518" lon="-95.0965271213" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="292" lat="43.1281603398" lon="-95.0961323933" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="293" lat="43.1281243398" lon="-95.0958812028" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="294" lat="43.1281032022" lon="-95.0957376654" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="295" lat="43.1280758911" lon="-95.0953429374" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="296" lat="43.1280794223" lon="-95.0949482094" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="297" lat="43.1281243398" lon="-95.0946286677" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="298" lat="43.1281345345" lon="-95.0945534815" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <node id="299" lat="43.1088283205" lon="-95.0945534815" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity"/>
+  <way id="1" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+    <nd ref="4"/>
+    <nd ref="1"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="name" v="Yard 7"/>
+  </way>
+  <way id="2" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="5"/>
+    <nd ref="6"/>
+    <nd ref="7"/>
+    <nd ref="8"/>
+    <nd ref="5"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="name" v="Town Farmyard"/>
+  </way>
+  <way id="3" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="9"/>
+    <nd ref="10"/>
+    <nd ref="11"/>
+    <nd ref="8"/>
+    <nd ref="9"/>
+    <tag k="natural" v="water"/>
+    <tag k="name" v="Town Reservoir"/>
+  </way>
+  <way id="4" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="12"/>
+    <nd ref="13"/>
+    <nd ref="14"/>
+    <nd ref="15"/>
+    <nd ref="12"/>
+    <tag k="natural" v="water"/>
+    <tag k="name" v="East Canal"/>
+  </way>
+  <way id="5" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="16"/>
+    <nd ref="5"/>
+    <nd ref="8"/>
+    <nd ref="17"/>
+    <nd ref="16"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="name" v="Town"/>
+  </way>
+  <way id="6" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="18"/>
+    <nd ref="19"/>
+    <nd ref="20"/>
+    <nd ref="21"/>
+    <nd ref="22"/>
+    <nd ref="23"/>
+    <nd ref="24"/>
+    <nd ref="25"/>
+    <tag k="highway" v="primary"/>
+    <tag k="name" v="Primary Road"/>
+  </way>
+  <way id="7" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="26"/>
+    <nd ref="27"/>
+    <nd ref="28"/>
+    <nd ref="29"/>
+    <nd ref="30"/>
+    <nd ref="31"/>
+    <nd ref="32"/>
+    <nd ref="33"/>
+    <nd ref="34"/>
+    <nd ref="35"/>
+    <nd ref="36"/>
+    <nd ref="37"/>
+    <nd ref="38"/>
+    <nd ref="39"/>
+    <nd ref="40"/>
+    <nd ref="41"/>
+    <nd ref="42"/>
+    <nd ref="43"/>
+    <nd ref="44"/>
+    <nd ref="45"/>
+    <nd ref="46"/>
+    <nd ref="47"/>
+    <nd ref="48"/>
+    <nd ref="49"/>
+    <nd ref="19"/>
+    <tag k="highway" v="primary"/>
+    <tag k="name" v="Southern Link Road"/>
+  </way>
+  <way id="8" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="50"/>
+    <nd ref="51"/>
+    <tag k="railway" v="rail"/>
+    <tag k="name" v="Railway"/>
+  </way>
+  <way id="9" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="20"/>
+    <nd ref="16"/>
+    <nd ref="52"/>
+    <nd ref="17"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="10" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="21"/>
+    <nd ref="53"/>
+    <nd ref="54"/>
+    <nd ref="55"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="11" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="22"/>
+    <nd ref="56"/>
+    <nd ref="57"/>
+    <nd ref="58"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="12" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="23"/>
+    <nd ref="59"/>
+    <nd ref="60"/>
+    <nd ref="61"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="13" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="24"/>
+    <nd ref="5"/>
+    <nd ref="62"/>
+    <nd ref="8"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="14" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="49"/>
+    <nd ref="16"/>
+    <nd ref="53"/>
+    <nd ref="56"/>
+    <nd ref="59"/>
+    <nd ref="5"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="15" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="48"/>
+    <nd ref="52"/>
+    <nd ref="54"/>
+    <nd ref="57"/>
+    <nd ref="60"/>
+    <nd ref="62"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="16" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="47"/>
+    <nd ref="17"/>
+    <nd ref="55"/>
+    <nd ref="58"/>
+    <nd ref="61"/>
+    <nd ref="8"/>
+    <tag k="highway" v="secondary"/>
+  </way>
+  <way id="17" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="63"/>
+    <nd ref="64"/>
+    <nd ref="65"/>
+    <nd ref="66"/>
+    <nd ref="67"/>
+    <nd ref="68"/>
+    <nd ref="69"/>
+    <nd ref="70"/>
+    <nd ref="71"/>
+    <nd ref="72"/>
+    <nd ref="73"/>
+    <nd ref="74"/>
+    <nd ref="75"/>
+    <nd ref="76"/>
+    <nd ref="77"/>
+    <nd ref="78"/>
+    <nd ref="79"/>
+    <nd ref="80"/>
+    <nd ref="81"/>
+    <nd ref="82"/>
+    <nd ref="83"/>
+    <nd ref="84"/>
+    <nd ref="85"/>
+    <nd ref="86"/>
+    <nd ref="87"/>
+    <nd ref="88"/>
+    <nd ref="89"/>
+    <nd ref="90"/>
+    <nd ref="91"/>
+    <nd ref="92"/>
+    <nd ref="93"/>
+    <nd ref="94"/>
+    <nd ref="95"/>
+    <nd ref="96"/>
+    <nd ref="97"/>
+    <nd ref="98"/>
+    <nd ref="99"/>
+    <nd ref="100"/>
+    <nd ref="101"/>
+    <nd ref="102"/>
+    <nd ref="103"/>
+    <nd ref="104"/>
+    <nd ref="105"/>
+    <nd ref="106"/>
+    <nd ref="107"/>
+    <nd ref="108"/>
+    <nd ref="109"/>
+    <nd ref="110"/>
+    <nd ref="111"/>
+    <nd ref="112"/>
+    <nd ref="113"/>
+    <nd ref="114"/>
+    <nd ref="115"/>
+    <nd ref="116"/>
+    <nd ref="117"/>
+    <nd ref="118"/>
+    <nd ref="119"/>
+    <nd ref="120"/>
+    <nd ref="121"/>
+    <nd ref="122"/>
+    <nd ref="123"/>
+    <nd ref="124"/>
+    <nd ref="125"/>
+    <nd ref="126"/>
+    <nd ref="127"/>
+    <nd ref="128"/>
+    <nd ref="129"/>
+    <nd ref="130"/>
+    <nd ref="131"/>
+    <nd ref="132"/>
+    <nd ref="133"/>
+    <nd ref="63"/>
+    <tag k="natural" v="wood"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="leaf_type" v="needleleave"/>
+  </way>
+  <way id="18" version="1" timestamp="2026-07-24T12:00:00Z" changeset="1" uid="1" user="Antigravity">
+    <nd ref="134"/>
+    <nd ref="135"/>
+    <nd ref="136"/>
+    <nd ref="137"/>
+    <nd ref="138"/>
+    <nd ref="139"/>
+    <nd ref="140"/>
+    <nd ref="141"/>
+    <nd ref="142"/>
+    <nd ref="143"/>
+    <nd ref="144"/>
+    <nd ref="145"/>
+    <nd ref="146"/>
+    <nd ref="147"/>
+    <nd ref="148"/>
+    <nd ref="149"/>
+    <nd ref="150"/>
+    <nd ref="151"/>
+    <nd ref="152"/>
+    <nd ref="153"/>
+    <nd ref="154"/>
+    <nd ref="155"/>
+    <nd ref="156"/>
+    <nd ref="157"/>
+    <nd ref="158"/>
+    <nd ref="159"/>
+    <nd ref="160"/>
+    <nd ref="161"/>
+    <nd ref="162"/>
+    <nd ref="163"/>
+    <nd ref="164"/>
+    <nd ref="165"/>
+    <nd ref="166"/>
+    <nd ref="167"/>
+    <nd ref="168"/>
+    <nd ref="169"/>
+    <nd ref="170"/>
+    <nd ref="171"/>
+    <nd ref="172"/>
+    <nd ref="173"/>
+    <nd ref="174"/>
+    <nd ref="175"/>
+    <nd ref="176"/>
+    <nd ref="177"/>
+    <nd ref="178"/>
+    <nd ref="179"/>
+    <nd ref="180"/>
+    <nd ref="181"/>
+    <nd ref="182"/>
+    <nd ref="183"/>
+    <nd ref="184"/>
+    <nd ref="185"/>
+    <nd ref="186"/>
+    <nd ref="187"/>
+    <nd ref="188"/>
+    <nd ref="189"/>
+    <nd ref="190"/>
+    <nd ref="191"/>
+    <nd ref="192"/>
+    <nd ref="193"/>
+    <nd ref="194"/>
+    <nd ref="195"/>
+    <nd ref="196"/>
+    <nd ref="197"/>
+    <nd ref="198"/>
+    <nd ref="199"/>
+    <nd ref="200"/>
+    <nd ref="201"/>
+    <nd ref="202"/>
+    <nd ref="203"/>
+    <nd ref="204"/>
+    <nd ref="205"/>
+    <nd ref="206"/>
+    <nd ref="207"/>
+    <nd ref="208"/>
+    <nd ref="209"/>
+    <nd ref="210"/>
+    <nd ref="211"/>
+    <nd ref="212"/>
+    <nd ref="213"/>
+    <nd ref="214"/>
+    <nd ref="214"/>
+    <nd ref="215"/>
+    <nd ref="216"/>
+    <nd ref="217"/>
+    <nd ref="218"/>
+    <nd ref="219"/>
+    <nd ref="220"/>
+    <nd ref="221"/>
+    <nd ref="222"/>
+    <nd ref="223"/>
+    <nd ref="224"/>
+    <nd ref="225"/>
+    <nd ref="226"/>
+    <nd ref="227"/>
+    <nd ref="228"/>
+    <nd ref="229"/>
+    <nd ref="230"/>
+    <nd ref="231"/>
+    <nd ref="232"/>
+    <nd ref="233"/>
+    <nd ref="234"/>
+    <nd ref="235"/>
+    <nd ref="236"/>
+    <nd ref="237"/>
+    <nd ref="238"/>
+    <nd ref="239"/>
+    <nd ref="240"/>
+    <nd ref="241"/>
+    <nd ref="242"/>
+    <nd ref="243"/>
+    <nd ref="244"/>
+    <nd ref="245"/>
+    <nd ref="246"/>
+    <nd ref="247"/>
+    <nd ref="248"/>
+    <nd ref="249"/>
+    <nd ref="250"/>
+    <nd ref="251"/>
+    <nd ref="252"/>
+    <nd ref="253"/>
+    <nd ref="254"/>
+    <nd ref="255"/>
+    <nd ref="256"/>
+    <nd ref="257"/>
+    <nd ref="258"/>
+    <nd ref="259"/>
+    <nd ref="260"/>
+    <nd ref="261"/>
+    <nd ref="262"/>
+    <nd ref="263"/>
+    <nd ref="264"/>
+    <nd ref="265"/>
+    <nd ref="266"/>
+    <nd ref="267"/>
+    <nd ref="268"/>
+    <nd ref="269"/>
+    <nd ref="270"/>
+    <nd ref="271"/>
+    <nd ref="272"/>
+    <nd ref="273"/>
+    <nd ref="274"/>
+    <nd ref="275"/>
+    <nd ref="276"/>
+    <nd ref="277"/>
+    <nd ref="278"/>
+    <nd ref="279"/>
+    <nd ref="280"/>
+    <nd ref="281"/>
+    <nd ref="282"/>
+    <nd ref="283"/>
+    <nd ref="284"/>
+    <nd ref="285"/>
+    <nd ref="286"/>
+    <nd ref="287"/>
+    <nd ref="288"/>
+    <nd ref="289"/>
+    <nd ref="290"/>
+    <nd ref="291"/>
+    <nd ref="292"/>
+    <nd ref="293"/>
+    <nd ref="294"/>
+    <nd ref="295"/>
+    <nd ref="296"/>
+    <nd ref="297"/>
+    <nd ref="298"/>
+    <nd ref="299"/>
+    <nd ref="134"/>
+    <tag k="natural" v="wood"/>
+    <tag k="landuse" v="farmyard"/>
+    <tag k="leaf_type" v="needleleave"/>
+  </way>
+</osm>

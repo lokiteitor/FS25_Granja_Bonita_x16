@@ -100,6 +100,20 @@ def main():
     # Natural base terrain (slope + hills + background mountains)
     natural_terrain = slope + noise_playable + w_bg * noise_mountains
     
+    # Raise the South-East mountain zone by 50 meters (5000 raw units)
+    # Center of the dome: SE corner of playable area (10240.0, 10240.0)
+    # Radius: 2500 meters
+    dx_mountain = x_m - 10240.0
+    dy_mountain = y_m - 10240.0
+    dist_mountain = np.sqrt(dx_mountain*dx_mountain + dy_mountain*dy_mountain)
+    
+    w_mountain = np.zeros_like(dist_mountain)
+    mask_mountain = dist_mountain <= 2500.0
+    t_mountain = dist_mountain[mask_mountain] / 2500.0
+    w_mountain[mask_mountain] = 0.5 * (1.0 + np.cos(np.pi * t_mountain))
+    
+    natural_terrain += w_mountain * 5000.0
+    
     print("3. Implementing flat valley floor in the northern playable area...")
     # Flat zone boundary inside the playable area (in meters):
     # x_m in [2048, 10240] and y_m in [2048, 3584] (y_osm < 1536 + offset)
@@ -143,12 +157,8 @@ def main():
     
     print("5. Flattening southern farmyards with extra-gentle transitions...")
     yards_to_flatten_m = [
-        (4480.0 + offset_m, 1035.0 + offset_m, 4736.0 + offset_m, 1291.0 + offset_m, "Yard 1 (NE)"),
-        (2406.0 + offset_m, 6850.0 + offset_m, 2714.0 + offset_m, 7157.0 + offset_m, "Yard 2 (SW)"),
-        (4506.0 + offset_m, 6952.0 + offset_m, 4710.0 + offset_m, 7157.0 + offset_m, "Yard 3 (S)"),
-        (6502.0 + offset_m, 6850.0 + offset_m, 6810.0 + offset_m, 7157.0 + offset_m, "Yard 4 (SE)"),
-        (3846.0 + offset_m, 7380.0 + offset_m, 4346.0 + offset_m, 7880.0 + offset_m, "Yard 7 (Southern)"),
-        (1664.0 + offset_m, 1024.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Farmyard")
+        (25.0 + offset_m, 7667.0 + offset_m, 525.0 + offset_m, 8167.0 + offset_m, "Yard 7 (Southern)"),
+        (7758.0 + offset_m, 1024.0 + offset_m, 8142.0 + offset_m, 1536.0 + offset_m, "Town Farmyard")
     ]
     
     margin_m = 120.0  # 120m transition margin for southern yards
@@ -199,12 +209,12 @@ def main():
                 if local_ramp[y_offset, x_offset]:
                     terrain[y, x] = local_smoothed[y_offset, x_offset]
                     
-    print("5.1. Creating 15m deep reservoir in southern half of Town Farmyard...")
+    print("5.1. Creating 15m deep reservoir in Town Farmyard (360x360m)...")
     # Town Farmyard: x [1664..2048], y [1024..1536] (relative to offset_m)
-    # Southern half: y [1280..1536] (relative to offset_m)
-    res_x0_m = 1664.0 + offset_m
-    res_x1_m = 2048.0 + offset_m
-    res_y0_m = 1280.0 + offset_m
+    # Reservoir: x [1664..2024], y [1176..1536] (relative to offset_m)
+    res_x0_m = 7758.0 + offset_m
+    res_x1_m = 8118.0 + offset_m
+    res_y0_m = 1176.0 + offset_m
     res_y1_m = 1536.0 + offset_m
     
     res_x0_px = int(res_x0_m * scale_m_to_px)
@@ -242,11 +252,11 @@ def main():
     # Apply local Gaussian smoothing on the reservoir banks
     res_sub = terrain[res_y0_px-5:res_y1_px+6, res_x0_px-5:res_x1_px+6]
     terrain[res_y0_px-5:res_y1_px+6, res_x0_px-5:res_x1_px+6] = gaussian_filter(res_sub, sigma=3 * scale_m_to_px)
-    
-    print("5.2. Creating sloping canal (3m deep at East to 6m deep at West, 10m wide) into reservoir...")
-    chan_x_west_m = 4096.0   # Reservoir eastern wall (res_x1_m)
-    chan_x_east_m = 10240.0  # Eastern playable boundary
-    chan_y_center_m = 3456.0 # Midpoint of reservoir in Y
+    print("5.2. Creating 5m deep canal into reservoir...")
+    # Reservoir: x [7758..8118], y [1176..1536] (relative to offset_m)
+    chan_x_west_m = res_x1_m  # Reservoir eastern wall (10166m)
+    chan_x_east_m = 8192.0 + offset_m + 200.0  # 200m into non-playable area (10440m)
+    chan_y_center_m = (res_y0_m + res_y1_m) / 2.0  # Midpoint of reservoir in Y (3404m)
     
     chan_width_m = 10.0
     half_w_m = chan_width_m / 2.0  # 5.0m
@@ -273,13 +283,7 @@ def main():
             w_profile = 0.5 * (1.0 - math.cos(math.pi * t_bank))
             
         for x in range(cx0_px, cx1_px + 1):
-            pt_x_m = x / scale_m_to_px
-            
-            # Linear ramp from East (3.0m) to West (6.0m)
-            u_ramp = (chan_x_east_m - pt_x_m) / (chan_x_east_m - chan_x_west_m)
-            u_ramp = max(0.0, min(1.0, u_ramp))
-            
-            depth_m = 3.0 + u_ramp * (6.0 - 3.0)  # 3m at East -> 6m at West
+            depth_m = 5.0
             depth_units = depth_m * 100.0
             
             target_height = terrain_before_chan[y, x] - w_profile * depth_units
@@ -304,17 +308,12 @@ def main():
     ls = LightSource(azdeg=315, altdeg=45)
     hs = ls.shade(terrain_vis, cmap=plt.get_cmap('terrain'), vert_exag=0.12, blend_mode='overlay')
     
-    # List of all areas (for highlighting, in meters)
     all_areas_m = [
-        (1024.0 + offset_m, 1024.0 + offset_m, 1664.0 + offset_m, 1536.0 + offset_m, "Town"),
-        (1664.0 + offset_m, 1024.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Farmyard"),
-        (1664.0 + offset_m, 1280.0 + offset_m, 2048.0 + offset_m, 1536.0 + offset_m, "Town Reservoir (15m)"),
-        (4096.0, 3451.0, 10240.0, 3461.0, "East Canal (3m-6m)"),
-        (4480.0 + offset_m, 1035.0 + offset_m, 4736.0 + offset_m, 1291.0 + offset_m, "Yard 1 (NE)"),
-        (2406.0 + offset_m, 6850.0 + offset_m, 2714.0 + offset_m, 7157.0 + offset_m, "Yard 2 (SW)"),
-        (4506.0 + offset_m, 6952.0 + offset_m, 4710.0 + offset_m, 7157.0 + offset_m, "Yard 3 (S)"),
-        (6502.0 + offset_m, 6850.0 + offset_m, 6810.0 + offset_m, 7157.0 + offset_m, "Yard 4 (SE)"),
-        (3846.0 + offset_m, 7380.0 + offset_m, 4346.0 + offset_m, 7880.0 + offset_m, "Yard 7 (Southern)")
+        (7118.0 + offset_m, 1024.0 + offset_m, 7758.0 + offset_m, 1536.0 + offset_m, "Town"),
+        (7758.0 + offset_m, 1024.0 + offset_m, 8142.0 + offset_m, 1536.0 + offset_m, "Town Farmyard"),
+        (7758.0 + offset_m, 1176.0 + offset_m, 8118.0 + offset_m, 1536.0 + offset_m, "Town Reservoir (15m)"),
+        (8118.0 + offset_m, 1351.0 + offset_m, 8192.0 + offset_m + 200.0, 1361.0 + offset_m, "East Canal (5m)"),
+        (25.0 + offset_m, 7667.0 + offset_m, 525.0 + offset_m, 8167.0 + offset_m, "Yard 7 (Southern)")
     ]
     
     # Define scale from meters to visualization coordinates: (scale_m_to_px / vis_scale) = 1.0 / 12 = 0.08333
@@ -323,31 +322,47 @@ def main():
     # --- Map 1: Full 12K Map View ---
     print("   Generating full map visualization...")
     fig, ax = plt.subplots(figsize=(12, 12), dpi=150)
-    ax.imshow(hs)
-    ax.axis('off')
+    ax.imshow(hs, extent=[0, 12288, 12288, 0])
+    
+    # Grid and tick labels for 12.3km canvas
+    ax.set_xlabel("X (East-West) [meters]", fontsize=12, fontweight='bold')
+    ax.set_ylabel("Y (North-South) [meters]", fontsize=12, fontweight='bold')
+    ax.set_xticks(np.arange(0, 12289, 1024))
+    ax.set_yticks(np.arange(0, 12289, 1024))
+    ax.grid(True, which='both', color='white', linestyle='--', linewidth=0.5, alpha=0.4)
+    ax.tick_params(colors='white')
+    # Dark theme styling
+    fig.patch.set_facecolor('#111111')
+    ax.set_facecolor('#111111')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+    ax.yaxis.label.set_color('white')
+    ax.xaxis.label.set_color('white')
+    ax.title.set_color('white')
+    
     ax.set_title("Full 12K DEM Map (Exactly 12288x12288px - Valley Style)", fontsize=16, fontweight='bold', pad=15)
     
-    playable_size_vis = 8192.0 * scale_m_to_vis
-    playable_start_vis = 2048.0 * scale_m_to_vis
-    rect_playable = plt.Rectangle((playable_start_vis, playable_start_vis), playable_size_vis, playable_size_vis, 
+    rect_playable = plt.Rectangle((2048.0, 2048.0), 8192.0, 8192.0, 
                                   fill=False, edgecolor='white', linewidth=2, linestyle='--', label='Playable Border (8km)')
     ax.add_patch(rect_playable)
     
     for x0_m, y0_m, x1_m, y1_m, name in all_areas_m:
-        rect = plt.Rectangle((x0_m * scale_m_to_vis, y0_m * scale_m_to_vis), 
-                             (x1_m - x0_m) * scale_m_to_vis, 
-                             (y1_m - y0_m) * scale_m_to_vis, 
+        rect = plt.Rectangle((x0_m, y0_m), (x1_m - x0_m), (y1_m - y0_m), 
                              fill=False, edgecolor='#00FF00', linewidth=1.5, linestyle='-')
         ax.add_patch(rect)
         
-    rect_flat_north = plt.Rectangle((rx0_m * scale_m_to_vis, ry0_m * scale_m_to_vis), 
-                                     (rx1_m - rx0_m) * scale_m_to_vis, 
-                                     (ry1_m - ry0_m) * scale_m_to_vis,
+    rect_flat_north = plt.Rectangle((rx0_m, ry0_m), (rx1_m - rx0_m), (ry1_m - ry0_m),
                                      fill=False, edgecolor='yellow', linewidth=2, linestyle=':', label='Flat North Area')
     ax.add_patch(rect_flat_north)
     
+    # Draw natural mountain shape contour lines for Bosque at 340m, 370m, 400m, 430m elevation
+    x_range_all = np.arange(1024) * 12.0
+    x_grid_vis, y_grid_vis = np.meshgrid(x_range_all, x_range_all)
+    cnt = ax.contour(x_grid_vis, y_grid_vis, terrain_vis, levels=[34000.0, 37000.0, 40000.0, 43000.0], colors=['#00FF00'], linewidths=[1.0, 1.0, 1.5, 2.0], alpha=0.7)
+    ax.clabel(cnt, inline=True, fmt=lambda x: f"{int(x/100)}m", fontsize=6, colors='#00FF00')
+    
     plt.legend(handles=[rect_playable, rect_flat_north], loc='upper right', facecolor='black', labelcolor='white')
-    plt.savefig(output_vis_path, bbox_inches='tight')
+    plt.savefig(output_vis_path, bbox_inches='tight', facecolor=fig.get_facecolor(), edgecolor='none')
     plt.close()
     print(f"   Saved full visualization to '{output_vis_path}'.")
     
@@ -358,26 +373,51 @@ def main():
     hs_detail = hs[p_start:p_end, p_start:p_end]
     
     fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
-    ax.imshow(hs_detail)
-    ax.axis('off')
-    ax.set_title("Detailed Playable Area (12288x12288 canvas resolution)", fontsize=16, fontweight='bold', pad=15)
+    ax.imshow(hs_detail, extent=[0, 8192, 8192, 0])
+    
+    # Grid and tick labels for 8km playable area relative coordinates
+    ax.set_xlabel("X (East-West) [meters]", fontsize=12, fontweight='bold')
+    ax.set_ylabel("Y (North-South) [meters]", fontsize=12, fontweight='bold')
+    ax.set_xticks(np.arange(0, 8193, 1024))
+    ax.set_yticks(np.arange(0, 8193, 1024))
+    ax.grid(True, which='both', color='white', linestyle='--', linewidth=0.5, alpha=0.4)
+    ax.tick_params(colors='white')
+    # Dark theme styling
+    fig.patch.set_facecolor('#111111')
+    ax.set_facecolor('#111111')
+    for spine in ax.spines.values():
+        spine.set_color('white')
+    ax.yaxis.label.set_color('white')
+    ax.xaxis.label.set_color('white')
+    ax.title.set_color('white')
+    
+    ax.set_title("Detailed Playable Area (8km x 8km Grid)", fontsize=16, fontweight='bold', pad=15)
     
     for x0_m, y0_m, x1_m, y1_m, name in all_areas_m:
-        x0_p = (x0_m * scale_m_to_vis) - p_start
-        y0_p = (y0_m * scale_m_to_vis) - p_start
-        w_p = (x1_m - x0_m) * scale_m_to_vis
-        h_p = (y1_m - y0_m) * scale_m_to_vis
+        x0_p = x0_m - offset_m
+        y0_p = y0_m - offset_m
+        w_p = x1_m - x0_m
+        h_p = y1_m - y0_m
         
         rect = plt.Rectangle((x0_p, y0_p), w_p, h_p, fill=False, edgecolor='#00FF00', linewidth=2.5, linestyle='-')
         ax.add_patch(rect)
-        ax.text(x0_p + 2, y0_p - 3, name, color='#00FF00', fontsize=8, fontweight='bold')
+        ax.text(x0_p + 15, y0_p - 25, name, color='#00FF00', fontsize=8, fontweight='bold')
         
-    flat_valley_y = (ry1_m * scale_m_to_vis) - p_start
+    flat_valley_y = ry1_m - offset_m
     ax.axhline(y=flat_valley_y, color='yellow', linestyle=':', linewidth=2.5)
-    ax.text(10, flat_valley_y - 8, "FLAT VALLEY FLOOR (North)", color='yellow', fontsize=10, fontweight='bold')
-    ax.text(10, flat_valley_y + 15, "TRANSITION RAMP (500m)", color='yellow', fontsize=10, fontweight='bold')
+    ax.text(100, flat_valley_y - 80, "FLAT VALLEY FLOOR (North)", color='yellow', fontsize=10, fontweight='bold')
+    ax.text(100, flat_valley_y + 150, "TRANSITION RAMP (500m)", color='yellow', fontsize=10, fontweight='bold')
     
-    plt.savefig(output_detail_vis_path, bbox_inches='tight')
+    # Draw natural mountain shape contour lines for Bosque at 340m, 370m, 400m, 430m elevation
+    x_range = np.arange(p_end - p_start) * 12.0
+    x_grid_vis_playable, y_grid_vis_playable = np.meshgrid(x_range, x_range)
+    terrain_vis_playable = terrain_vis[p_start:p_end, p_start:p_end]
+    cnt = ax.contour(x_grid_vis_playable, y_grid_vis_playable, terrain_vis_playable, 
+                     levels=[34000.0, 37000.0, 40000.0, 43000.0], colors=['#00FF00'], linewidths=[1.5, 1.5, 2.0, 2.5], alpha=0.8)
+    ax.clabel(cnt, inline=True, fmt=lambda x: f"{int(x/100)}m", fontsize=8, colors='#00FF00')
+    ax.text(5000, 6800, "Bosque (Montaña SE)", color='#00FF00', fontsize=10, fontweight='bold')
+    
+    plt.savefig(output_detail_vis_path, bbox_inches='tight', facecolor=fig.get_facecolor(), edgecolor='none')
     plt.close()
     print(f"   Saved detailed visualization to '{output_detail_vis_path}'.")
     
