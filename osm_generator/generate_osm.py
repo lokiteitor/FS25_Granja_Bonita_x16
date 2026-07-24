@@ -4,7 +4,8 @@ import math
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
+from scipy import ndimage
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -42,11 +43,8 @@ def main():
     
     # Forest checking helpers (Elevation >= 370m is forest)
     def is_in_forest(x, y, buffer_m=5.0):
-        # The forest is strictly South/East of the Southern Link Road.
-        # If the point is North/West of the road, it is not in the forest.
-        if y < get_road_y(x) - buffer_m:
-            return False
-            
+        # The DEM decides on its own: wherever the terrain reaches 370m it is
+        # forest, on either side of the Southern Link Road.
         x_min = max(0, int(x - buffer_m))
         x_max = min(8191, int(x + buffer_m))
         y_min = max(0, int(y - buffer_m))
@@ -90,6 +88,7 @@ def main():
         ways.append({
             'id': next_way_id,
             'node_refs': node_refs,
+            'coords': [(float(x), float(y)) for x, y in coords], # local metres, used by the infill pass
             'tags': tags
         })
         next_way_id += 1
@@ -296,6 +295,7 @@ def main():
     # 1. Select 10 random cells to place forests
     import random
     candidates = []
+    clear_cells = set()
     for i in range(len(xs_grid_lines) - 1):
         x_a = xs_grid_lines[i]
         x_b = xs_grid_lines[i+1]
@@ -322,33 +322,43 @@ def main():
             if not road_clear:
                 continue
                 
-            # Check forest clearance (don't overlay on the existing mountain/hill forests)
-            corners_clear = True
+            candidates.append((i, j))
+
+            # Check forest clearance (don't overlay on the existing mountain/hill forests).
+            # Recorded rather than filtered here: dropping cells before the shuffle would
+            # reshuffle every draw and move all ten forests, so the check is applied to the
+            # shuffled order instead and only the offending cells are skipped.
             corners = [
                 (x_f_start, y_f_start),
                 (x_f_end, y_f_start),
                 (x_f_end, y_f_end),
                 (x_f_start, y_f_end)
             ]
-            for cx, cy in corners:
-                if is_in_forest(cx, cy, buffer_m=5.0):
-                    corners_clear = False
-                    break
-            if not corners_clear:
-                continue
-                
-            candidates.append((i, j))
-            
-    print(f"   Found {len(candidates)} candidate cells for 10-hectare random forests.")
+            if not any(is_in_forest(cx, cy, buffer_m=5.0) for cx, cy in corners):
+                clear_cells.add((i, j))
+
+    print(f"   Found {len(candidates)} candidate cells for 10-hectare random forests "
+          f"({len(clear_cells)} clear of the mountain forests).")
     # Deterministic seeded selection
     rng = random.Random(42)
     candidates.sort()
     rng.shuffle(candidates)
-    selected_cells = set(candidates[:10])
+    selected_cells = set([c for c in candidates if c in clear_cells][:10])
     
     field_idx = 1
     forest_idx = 1
-    
+    cell_forest_idx = 1
+
+    # PLSS cells (x-index, y-index into xs_grid_lines / ys_grid_lines) that are
+    # forested instead of farmed. (2, 8) is the strip x[1600-2400] y[7409-7650],
+    # wedged between the last tertiary road and the Southern Link Road, facing the
+    # south-western forest across the road.
+    wooded_cells = {(2, 8)}
+
+    # PLSS cells kept as yard rather than farmland. (5, 8) is x[4000-4800] y[7409-7650],
+    # the 18.2 ha strip against the Southern Link Road that used to be Field 61.
+    yard_cells = {(5, 8)}
+
     print("   Generating PLSS farmlands (fields) and 10 random forests...")
     for i in range(len(xs_grid_lines) - 1):
         x_a = xs_grid_lines[i]
@@ -449,10 +459,27 @@ def main():
                     poly_bottom.append((x, y_b_limit))
                 if valid:
                     coords = poly_top + list(reversed(poly_bottom)) + [poly_top[0]]
-                    add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
-                    field_idx += 1
-                    
-    print(f"   Added {field_idx - 1} PLSS fields and {forest_idx - 1} random forests.")
+                    if (i, j) in wooded_cells:
+                        # No field here: the cell is given over to the forest that
+                        # already borders it on the far side of the Southern Link Road.
+                        add_way(coords, {
+                            'natural': 'wood',
+                            'landuse': 'farmyard',
+                            'leaf_type': 'needleleave',
+                            'name': f'Cell Forest {cell_forest_idx}'
+                        })
+                        cell_forest_idx += 1
+                    else:
+                        # Yard cells still consume a field number, so converting one
+                        # does not renumber every field that comes after it.
+                        if (i, j) in yard_cells:
+                            add_way(coords, {'landuse': 'farmyard', 'name': f'Yard {field_idx}'})
+                        else:
+                            add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
+                        field_idx += 1
+
+    print(f"   Added {field_idx - 1} PLSS fields, {forest_idx - 1} random forests "
+          f"and {cell_forest_idx - 1} wooded cells.")
 
     # 9d. Northern Farmlands & Tertiary Roads (Horizontal layout, 15m borders)
     def pack_strip_horiz(y_start, y_end, seed):
@@ -489,6 +516,9 @@ def main():
         return fields, roads
 
     print("   Generating Northern Farmlands (Horizontal standard, 15m borders)...")
+
+    # Northern strip parcels (strip number, field number) kept as yard, not farmland.
+    north_yards = {(5, 1)}
     
     # Define 5 strips of height 180m
     strips = [
@@ -526,7 +556,11 @@ def main():
                 (x_start, y_e),
                 (x_start, y_s)
             ]
-            add_way(coords, {'landuse': 'farmland', 'name': f'Field N{s_idx+1}_{f_idx+1} ({size:.1f} ha)'})
+            label = f'N{s_idx+1}_{f_idx+1}'
+            if (s_idx + 1, f_idx + 1) in north_yards:
+                add_way(coords, {'landuse': 'farmyard', 'name': f'Yard {label}'})
+            else:
+                add_way(coords, {'landuse': 'farmland', 'name': f'Field {label} ({size:.1f} ha)'})
             
         # Add vertical roads in gaps connecting adjacent horizontal roads
         for rx in roads:
@@ -746,20 +780,160 @@ def main():
     print("   Extracting and generating forest areas from DEM (elevation >= 370m)...")
     forest_polys = get_forest_polygons()
     for i, poly in enumerate(forest_polys):
-        # Clip the forest polygons to stay South/East of the Southern Link Road
-        clipped_poly = []
-        for x, y in poly:
-            road_y = get_road_y(x)
-            if y < road_y:
-                y = road_y
-            clipped_poly.append((x, y))
-            
-        add_way(clipped_poly, {
+        # No clipping against the Southern Link Road: the 370m contour is followed
+        # as-is, so the forest spills over to the North/West side where the terrain
+        # actually rises. The roads and fields already keep clear of it via
+        # is_in_forest(), and the infill pass below closes whatever is left over.
+        add_way(list(poly), {
             'natural': 'wood',
             'landuse': 'farmyard',
             'leaf_type': 'needleleave'
         })
-        print(f"   Added forest way {i+1} with {len(clipped_poly)} nodes.")
+        print(f"   Added forest way {i+1} with {len(poly)} nodes.")
+
+    # 11. Forest infill: absorb the leftover open ground next to the forests.
+    # Everything generated so far is rasterised into an occupancy mask; whatever
+    # is left unoccupied and sits next to a wood becomes forest too. Pockets on
+    # the far side of the Southern Link Road qualify as well - a road splits the
+    # empty ground into separate pockets and each one is judged on its own.
+    INFILL_SCALE_M = 4.0        # raster resolution (metres per pixel)
+    INFILL_MIN_RADIUS_M = 25.0  # a pocket must fit a disk of this radius to count
+    INFILL_NEAR_M = 80.0        # ...and lie within this distance of an existing wood
+    INFILL_SIMPLIFY_M = 8.0     # Douglas-Peucker tolerance for the emitted outlines
+    ROAD_CORRIDOR_M = 15.0      # width reserved around linear features
+
+    def disk_structure(radius_px):
+        yy, xx = np.ogrid[-radius_px:radius_px+1, -radius_px:radius_px+1]
+        return (xx*xx + yy*yy) <= radius_px*radius_px
+
+    def simplify(points, tol):
+        # Iterative Douglas-Peucker (the raster outlines are far too dense to keep)
+        keep = np.zeros(len(points), dtype=bool)
+        keep[0] = keep[-1] = True
+        stack = [(0, len(points) - 1)]
+        pts = np.asarray(points, dtype=float)
+        while stack:
+            i0, i1 = stack.pop()
+            if i1 <= i0 + 1:
+                continue
+            a, b = pts[i0], pts[i1]
+            seg = b - a
+            seg_len = math.hypot(seg[0], seg[1])
+            chunk = pts[i0+1:i1]
+            if seg_len < 1e-9:
+                d = np.hypot(chunk[:, 0] - a[0], chunk[:, 1] - a[1])
+            else:
+                d = np.abs(np.cross(seg, chunk - a)) / seg_len
+            k = int(np.argmax(d))
+            if d[k] > tol:
+                k += i0 + 1
+                keep[k] = True
+                stack.append((i0, k))
+                stack.append((k, i1))
+        return [tuple(p) for p in pts[keep]]
+
+    def build_infill_polygons():
+        n = int(round(8192.0 / INFILL_SCALE_M))
+        occ_img = Image.new('L', (n, n), 0)
+        wood_img = Image.new('L', (n, n), 0)
+        occ_draw = ImageDraw.Draw(occ_img)
+        wood_draw = ImageDraw.Draw(wood_img)
+        line_w = max(1, int(round(ROAD_CORRIDOR_M / INFILL_SCALE_M)))
+
+        for w in ways:
+            pts = [(x / INFILL_SCALE_M, y / INFILL_SCALE_M) for x, y in w['coords']]
+            if len(pts) < 2:
+                continue
+            tags = w['tags']
+            is_wood = tags.get('natural') == 'wood'
+            if is_wood or 'landuse' in tags or tags.get('natural') == 'water':
+                occ_draw.polygon(pts, fill=255, outline=255)
+                if is_wood:
+                    wood_draw.polygon(pts, fill=255, outline=255)
+            else:
+                occ_draw.line(pts, fill=255, width=line_w, joint='curve')
+
+        void = np.array(occ_img) == 0
+        wood = np.array(wood_img) > 0
+
+        # Erode first: this drops the thin stuff (map margins, the strip along the
+        # railway, verges) and keeps only pockets of genuinely open ground.
+        disk = disk_structure(max(1, int(round(INFILL_MIN_RADIUS_M / INFILL_SCALE_M))))
+        core = ndimage.binary_erosion(void, structure=disk)
+        if not core.any():
+            return ([], 0.0), ([], 0.0)
+
+        # Judge each pocket as a whole: thick enough to have a core, and near a wood.
+        lab, n_lab = ndimage.label(void)
+        dist_m = ndimage.distance_transform_edt(~wood) * INFILL_SCALE_M
+        near = np.atleast_1d(ndimage.minimum(dist_m, lab, range(1, n_lab + 1)))
+        thick_ids = np.zeros(n_lab + 1, dtype=bool)
+        thick_ids[np.unique(lab[core])] = True
+        thick_ids[0] = False
+
+        near_ids = np.concatenate(([False], near <= INFILL_NEAR_M)) & thick_ids
+        far_ids = thick_ids & ~near_ids
+
+        def trace(selected_ids):
+            # Dilate the core back out so the pocket recovers its real outline while
+            # the thin tentacles the erosion removed stay out of it.
+            sel = selected_ids[lab]
+            if not sel.any():
+                return [], 0.0
+            mask = ndimage.binary_dilation(core & sel, structure=disk) & sel
+            area = mask.sum() * INFILL_SCALE_M**2 / 10000.0
+
+            enclosed = ndimage.binary_fill_holes(mask) & ~mask
+            if enclosed.any():
+                print(f"   WARNING: infill pockets enclose "
+                      f"{enclosed.sum() * INFILL_SCALE_M**2 / 10000.0:.1f} ha of occupied land; "
+                      f"those holes get swallowed by the outline.")
+
+            # Trace the outlines. Padding with a ring of zeros keeps every contour a
+            # closed loop even where the pocket runs into the edge of the map.
+            padded = np.zeros((n + 2, n + 2), dtype=np.float32)
+            padded[1:-1, 1:-1] = mask
+            axis = (np.arange(n + 2) - 0.5) * INFILL_SCALE_M
+            gx, gy = np.meshgrid(axis, axis)
+
+            fig, ax = plt.subplots()
+            cs = ax.contour(gx, gy, padded, levels=[0.5])
+            plt.close(fig)
+
+            polygons = []
+            for seg in cs.allsegs[0]:
+                pts = [(min(max(px, 0.0), 8192.0), min(max(py, 0.0), 8192.0)) for px, py in seg]
+                if pts[0] != pts[-1]:
+                    pts.append(pts[0])
+                pts = simplify(pts, INFILL_SIMPLIFY_M)
+                if len(pts) < 4:
+                    continue
+                if pts[0] != pts[-1]:
+                    pts.append(pts[0])
+                polygons.append(pts)
+            return polygons, area
+
+        return trace(near_ids), trace(far_ids)
+
+    print("   Filling unoccupied land next to the forests...")
+    (wood_polys, wood_ha), (yard_polys, yard_ha) = build_infill_polygons()
+    for i, poly in enumerate(wood_polys):
+        add_way(poly, {
+            'natural': 'wood',
+            'landuse': 'farmyard',
+            'leaf_type': 'needleleave',
+            'name': f'Forest Infill {i+1}'
+        })
+    print(f"   Added {len(wood_polys)} infill forest areas covering {wood_ha:.1f} ha.")
+
+    # Pockets too far from any wood to be absorbed by it stay open ground: they are
+    # tagged farmyard only, so they read as yard rather than as forest or field.
+    for i, poly in enumerate(yard_polys):
+        add_way(poly, {
+            'landuse': 'farmyard',
+            'name': f'Open Ground {i+1}'
+        })
+    print(f"   Added {len(yard_polys)} leftover farmyard areas covering {yard_ha:.1f} ha.")
 
     # Generate XML
     osm_elem = ET.Element('osm', version='0.6', generator='Antigravity')

@@ -104,13 +104,22 @@ def main():
         name = tags.get('name', '')
 
         # Area features (Polygons)
-        if 'landuse' in tags and tags['landuse'] == 'farmyard':
+        # NOTE: woods are tagged natural=wood AND landuse=farmyard, so they must be
+        # matched before the farmyard branch or they render as a farmyard.
+        if 'natural' in tags and tags['natural'] == 'wood':
+            # Forest (wood)
+            poly = patches.Polygon(coords, closed=True, facecolor='#15803D', edgecolor='#16A34A', alpha=0.45, linewidth=1.5)
+            ax.add_patch(poly)
+
+        elif 'landuse' in tags and tags['landuse'] == 'farmyard':
             # Town, Yard 7, Town Farmyard
-            if name == 'Yard 7':
-                color = '#D97706' # Amber 600
+            if name.startswith('Yard'):
+                color = '#D97706' # Amber 600 - Yard 7 and the parcels converted to yard
                 has_farmyard = True
             elif name == 'Town Farmyard':
                 color = '#059669' # Emerald 600
+            elif name.startswith('Open Ground'):
+                color = '#78716C' # Stone 500 - leftover open ground, neither field nor forest
             else: # Town
                 color = '#4F46E5' # Indigo 600
                 
@@ -120,11 +129,6 @@ def main():
         elif 'natural' in tags and tags['natural'] == 'water':
             # Reservoir or Canal
             poly = patches.Polygon(coords, closed=True, facecolor='#0284C7', edgecolor='#0EA5E9', alpha=0.6, linewidth=1.5)
-            ax.add_patch(poly)
-
-        elif 'natural' in tags and tags['natural'] == 'wood':
-            # Forest (wood)
-            poly = patches.Polygon(coords, closed=True, facecolor='#15803D', edgecolor='#16A34A', alpha=0.45, linewidth=1.5)
             ax.add_patch(poly)
 
         elif 'landuse' in tags and tags['landuse'] == 'farmland':
