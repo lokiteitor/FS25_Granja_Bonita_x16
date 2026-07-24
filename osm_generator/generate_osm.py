@@ -220,6 +220,16 @@ def main():
         x_int = np.interp(y, road_ys_y, road_xs_y)
         intersections.append((x_int, y))
 
+    # Junction where the forest haul road leaves the Southern Link Road (section 12).
+    # It sits on the straight diagonal run, so it lands on the road line exactly and
+    # slots into the X-Y ordering below without disturbing it.
+    forest_access_t = 0.40
+    forest_access_pt = (
+        5580.13 + forest_access_t * (6890.87 - 5580.13),
+        7437.87 + forest_access_t * (6127.13 - 7437.87)
+    )
+    intersections.append(forest_access_pt)
+
     # Add intersections to primary road way, sort by X-Y (strictly monotonic along road path)
     all_road_nodes = list(set(new_primary_coords_base + intersections))
     all_road_nodes.sort(key=lambda pt: pt[0] - pt[1])
@@ -934,6 +944,155 @@ def main():
             'name': f'Open Ground {i+1}'
         })
     print(f"   Added {len(yard_polys)} leftover farmyard areas covering {yard_ha:.1f} ha.")
+
+    # 12. Forestry tracks in the south-eastern forest.
+    # Three dirt tracks run along contour lines, so machinery works on the level and
+    # crosses the forest instead of climbing it. On their own they would be stranded
+    # (every contour here is an arc that starts and ends on the edge of the map), so a
+    # haul road climbs from the Southern Link Road to the summit and crosses all three;
+    # that is what ties them back into the primary network.
+    FOREST_TRACK_LEVELS = [390.0, 415.0, 440.0]  # metres above sea level
+    FOREST_TRACK_SIMPLIFY_M = 10.0
+    FOREST_HAUL_STEP_M = 25.0
+    FOREST_HAUL_STEER = 0.55        # 1.0 = straight up the fall line, 0.0 = straight at the summit
+    FOREST_SUMMIT = (8140.0, 7940.0)
+    FOREST_SEED = (7500.0, 7000.0)  # a point known to sit inside the south-eastern forest
+
+    def build_forest_tracks():
+        s = 4.0
+        gn = int(round(8192.0 / s))
+        # Elevation in metres on a 4 m grid, smoothed to ~44 m so the contours come out
+        # as usable alignments instead of following every ripple in the DEM.
+        elev = ndimage.uniform_filter(playable[::int(s), ::int(s)] / 100.0, size=11)
+
+        wimg = Image.new('L', (gn, gn), 0)
+        wdraw = ImageDraw.Draw(wimg)
+        for w in ways:
+            if w['tags'].get('natural') != 'wood':
+                continue
+            pts = [(x / s, y / s) for x, y in w['coords']]
+            if len(pts) >= 2:
+                wdraw.polygon(pts, fill=255, outline=255)
+        lab, _ = ndimage.label(np.array(wimg) > 0)
+        seed = lab[int(FOREST_SEED[1] / s), int(FOREST_SEED[0] / s)]
+        if seed == 0:
+            print("   WARNING: forest seed is not inside a wood; skipping forestry tracks.")
+            return []
+        forest = lab == seed
+
+        def cota(x, y):
+            u = min(max(x / s, 0.0), gn - 1.001)
+            v = min(max(y / s, 0.0), gn - 1.001)
+            i, j = int(u), int(v)
+            fu, fv = u - i, v - j
+            return float(elev[j, i] * (1-fu) * (1-fv) + elev[j, i+1] * fu * (1-fv)
+                         + elev[j+1, i] * (1-fu) * fv + elev[j+1, i+1] * fu * fv)
+
+        # Haul road: each step blends the uphill direction with the bearing to the
+        # summit, which climbs steadily instead of curling round onto the fall line.
+        haul = [forest_access_pt]
+        x, y = forest_access_pt
+        for _ in range(400):
+            h = 8.0
+            gx = (cota(x + h, y) - cota(x - h, y)) / (2 * h)
+            gy = (cota(x, y + h) - cota(x, y - h)) / (2 * h)
+            g = math.hypot(gx, gy)
+            if g > 1e-9:
+                gx, gy = gx / g, gy / g
+            tx, ty = FOREST_SUMMIT[0] - x, FOREST_SUMMIT[1] - y
+            tl = math.hypot(tx, ty)
+            if tl < FOREST_HAUL_STEP_M * 1.5:
+                break
+            tx, ty = tx / tl, ty / tl
+            dx = FOREST_HAUL_STEER * gx + (1 - FOREST_HAUL_STEER) * tx
+            dy = FOREST_HAUL_STEER * gy + (1 - FOREST_HAUL_STEER) * ty
+            dl = math.hypot(dx, dy)
+            if dl < 1e-9:
+                break
+            x += FOREST_HAUL_STEP_M * dx / dl
+            y += FOREST_HAUL_STEP_M * dy / dl
+            if not (40.0 <= x <= 8152.0 and 40.0 <= y <= 8152.0):
+                break
+            haul.append((x, y))
+
+        def junction_at(level):
+            # The haul road climbs monotonically, so it meets each contour exactly once.
+            for k in range(len(haul) - 1):
+                za, zb = cota(*haul[k]), cota(*haul[k+1])
+                if (za - level) * (zb - level) <= 0 and za != zb:
+                    f = (level - za) / (zb - za)
+                    return (haul[k][0] + f * (haul[k+1][0] - haul[k][0]),
+                            haul[k][1] + f * (haul[k+1][1] - haul[k][1]))
+            return None
+
+        def insert_point(poly, p):
+            # Splice p into poly at its nearest segment, so both ways end up sharing
+            # the node get_node() hands out for that exact coordinate.
+            best_d, best_k = None, 0
+            for k in range(len(poly) - 1):
+                ax, ay = poly[k]
+                vx, vy = poly[k+1][0] - ax, poly[k+1][1] - ay
+                l2 = vx * vx + vy * vy
+                t = 0.0 if l2 < 1e-12 else max(0.0, min(1.0, ((p[0]-ax)*vx + (p[1]-ay)*vy) / l2))
+                d = math.hypot(p[0] - (ax + t*vx), p[1] - (ay + t*vy))
+                if best_d is None or d < best_d:
+                    best_d, best_k = d, k
+            return poly[:best_k+1] + [p] + poly[best_k+1:], best_d
+
+        masked = np.where(forest, elev, np.nan)
+        axis = np.arange(gn) * s
+        gx_grid, gy_grid = np.meshgrid(axis, axis)
+
+        tracks = []
+        junctions = []
+        for level in FOREST_TRACK_LEVELS:
+            fig, ax = plt.subplots()
+            cs = ax.contour(gx_grid, gy_grid, masked, levels=[level])
+            plt.close(fig)
+            segs = [seg for seg in cs.allsegs[0] if len(seg) > 3]
+            if not segs:
+                print(f"   WARNING: no contour at {level:.0f} m inside the forest.")
+                continue
+            seg = max(segs, key=lambda a: np.hypot(*np.diff(np.asarray(a), axis=0).T).sum())
+            poly = simplify([(float(px), float(py)) for px, py in seg], FOREST_TRACK_SIMPLIFY_M)
+
+            j = junction_at(level)
+            if j is None:
+                print(f"   WARNING: haul road never reaches {level:.0f} m; track left unconnected.")
+                gap = float('nan')
+            else:
+                poly, gap = insert_point(poly, j)
+                junctions.append((level, j))
+            tracks.append((level, poly, gap))
+
+        # Splice the junctions into the haul road too, furthest along the climb first so
+        # the earlier insertion indices stay valid.
+        haul_poly = simplify(haul, FOREST_TRACK_SIMPLIFY_M)
+        for level, j in sorted(junctions, key=lambda z: -z[0]):
+            haul_poly, _ = insert_point(haul_poly, j)
+
+        def length(poly):
+            return sum(math.dist(poly[k], poly[k+1]) for k in range(len(poly) - 1))
+
+        def grade(poly):
+            g = [abs(cota(*poly[k+1]) - cota(*poly[k])) / max(1e-9, math.dist(poly[k], poly[k+1]))
+                 for k in range(len(poly) - 1)]
+            return (100.0 * float(np.mean(g)), 100.0 * float(np.max(g))) if g else (0.0, 0.0)
+
+        add_way(haul_poly, {'highway': 'tertiary', 'name': 'Forest Haul Road'})
+        gm, gx_ = grade(haul_poly)
+        print(f"   Forest Haul Road: {length(haul_poly)/1000:.2f} km, {len(haul_poly)} nodes, "
+              f"{cota(*haul_poly[0]):.0f}->{cota(*haul_poly[-1]):.0f} m, grade {gm:.1f}% avg / {gx_:.1f}% max.")
+
+        for idx, (level, poly, gap) in enumerate(tracks, 1):
+            add_way(poly, {'highway': 'tertiary', 'name': f'Forest Track {level:.0f}m'})
+            gm, gx_ = grade(poly)
+            print(f"   Forest Track {level:.0f}m: {length(poly)/1000:.2f} km, {len(poly)} nodes, "
+                  f"grade {gm:.1f}% avg / {gx_:.1f}% max, junction offset {gap:.1f} m.")
+        return tracks
+
+    print("   Laying out forestry tracks in the south-eastern forest...")
+    build_forest_tracks()
 
     # Generate XML
     osm_elem = ET.Element('osm', version='0.6', generator='Antigravity')
