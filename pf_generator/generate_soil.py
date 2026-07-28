@@ -13,7 +13,7 @@ and guarantees realistic pixel counts matching FS25 Precision Farming.
 import os
 import argparse
 import random
-import time
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 import numpy as np
 import scipy.ndimage as ndimage
 from PIL import Image, ImageDraw, ImageFont
@@ -22,8 +22,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Generate natural soil maps for FS25 Precision Farming")
     parser.add_argument("-s", "--seed", type=int, default=None,
                         help="Seed for the random generator (default: random based on time)")
-    parser.add_argument("-o", "--output-dir", type=str, default=".",
-                        help="Output directory for generated images (default: current directory)")
+    parser.add_argument("-o", "--output-dir", type=str, default="output",
+                        help="Output directory for generated images (default: ./output)")
     parser.add_argument("--scale-coarse", type=float, default=120.0,
                         help="Sigma for coarse geological features (default: 120)")
     parser.add_argument("--scale-medium", type=float, default=40.0,
@@ -32,56 +32,59 @@ def parse_args():
                         help="Sigma for fine details/borders (default: 12)")
     parser.add_argument("--pixel-scale", type=float, default=2.0,
                         help="Scale ratio: meters per pixel (default: 2.0, i.e. 1px = 2m for a 4096x4096m map)")
+    parser.add_argument("-n", "--batch", type=int, default=1,
+                        help="Number of maps to generate. With N > 1, files are saved flat in "
+                             "<output-dir> as NN_seed_<seed>_soilMap[_vis].png (default: 1)")
+    parser.add_argument("-j", "--jobs", type=int, default=None,
+                        help="Number of maps to generate in parallel in batch mode "
+                             "(default: half the CPU cores, capped to the batch size)")
     return parser.parse_args()
 
 
-def generate_noise_field(seed, size, sigma_coarse, sigma_medium, sigma_fine):
+def submit_noise_field(executor, seed, size, sigma_coarse, sigma_medium, sigma_fine):
     """
-    Generates a standardized multi-scale noise field.
+    Draws the 3 raw noise layers (coarse/medium/fine) and submits their gaussian
+    filters to the executor. scipy releases the GIL, so the filters — the
+    expensive part — run concurrently in threads. Returns a list of 3 futures.
     """
     rng = np.random.default_rng(seed)
-    
-    # 1. Coarse layer (large structural features)
-    noise_c = rng.standard_normal((size, size))
-    noise_c = ndimage.gaussian_filter(noise_c, sigma=sigma_coarse)
-    noise_c = (noise_c - np.mean(noise_c)) / (np.std(noise_c) + 1e-8)
-    
-    # 2. Medium layer (interspersed patches)
-    noise_m = rng.standard_normal((size, size))
-    noise_m = ndimage.gaussian_filter(noise_m, sigma=sigma_medium)
-    noise_m = (noise_m - np.mean(noise_m)) / (np.std(noise_m) + 1e-8)
-    
-    # 3. Fine layer (edge texture)
-    noise_f = rng.standard_normal((size, size))
-    noise_f = ndimage.gaussian_filter(noise_f, sigma=sigma_fine)
-    noise_f = (noise_f - np.mean(noise_f)) / (np.std(noise_f) + 1e-8)
-    
-    # Combined with weights
-    combined = noise_c * 0.65 + noise_m * 0.28 + noise_f * 0.07
+    return [executor.submit(ndimage.gaussian_filter, rng.standard_normal((size, size)), sigma=s)
+            for s in (sigma_coarse, sigma_medium, sigma_fine)]
+
+
+def combine_noise_field(futures):
+    """
+    Collects the 3 filtered layers, standardizes each, and combines them with
+    the coarse/medium/fine weights into one standardized multi-scale field.
+    """
+    layers = []
+    for fut in futures:
+        n = fut.result()
+        layers.append((n - np.mean(n)) / (np.std(n) + 1e-8))
+
+    combined = layers[0] * 0.65 + layers[1] * 0.28 + layers[2] * 0.07
     return (combined - np.mean(combined)) / (np.std(combined) + 1e-8)
 
-def main():
-    args = parse_args()
-    
-    # Determine seed
-    if args.seed is None:
-        # Use system entropy or milliseconds to ensure a different seed in each run
-        seed = int((time.time() * 1000) % 99999999)
-    else:
-        seed = args.seed
-        
+def generate_map(seed, output_dir, args, prefix=""):
+    """Generates one <prefix>soilMap.png + <prefix>soilMap_vis.png pair into output_dir."""
     print(f"[*] Starting soil map generation using seed: {seed}")
-    
+
     # Create output directory if it doesn't exist
-    os.makedirs(args.output_dir, exist_ok=True)
-    
+    os.makedirs(output_dir, exist_ok=True)
+
     # Size of the map (2048 x 2048)
     S = 2048
     
-    # Generate two independent noise fields for nested categorization
+    # Generate two independent noise fields for nested categorization.
+    # All 6 gaussian filters (2 fields x 3 layers) run concurrently.
     print("[*] Generating multi-scale noise fields...")
-    noise_zone = generate_noise_field(seed, S, args.scale_coarse, args.scale_medium, args.scale_fine)
-    noise_patch = generate_noise_field(seed + 12345, S, args.scale_coarse * 0.7, args.scale_medium * 0.7, args.scale_fine)
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures_zone = submit_noise_field(executor, seed, S,
+                                          args.scale_coarse, args.scale_medium, args.scale_fine)
+        futures_patch = submit_noise_field(executor, seed + 12345, S,
+                                           args.scale_coarse * 0.7, args.scale_medium * 0.7, args.scale_fine)
+        noise_zone = combine_noise_field(futures_zone)
+        noise_patch = combine_noise_field(futures_patch)
     
     # Target proportions (Adjusted: Arena Limosa (0) and Arcilla Limosa (3) reduced to 5.0% max):
     # 0 (Arena Limosa / Loamy Sand): 5.0% (209715 px)
@@ -159,7 +162,7 @@ def main():
     palette_data += [0] * (768 - len(palette_data))
     img_raw.putpalette(palette_data)
     
-    output_raw_path = os.path.join(args.output_dir, "soilMap.png")
+    output_raw_path = os.path.join(output_dir, f"{prefix}soilMap.png")
     img_raw.save(output_raw_path)
     print(f"[+] Raw soil map saved to: {output_raw_path}")
     
@@ -239,10 +242,67 @@ def main():
         draw.text((text_x, y_offset + 70), f"Área: {ha:.2f} ha ({pct:.2f}%)", fill=(220, 220, 220), font=font_regular)
         draw.text((text_x, y_offset + 90), f"Píxeles: {cnt:,}", fill=(130, 140, 150), font=font_small)
         
-    output_vis_path = os.path.join(args.output_dir, "soilMap_vis.png")
+    output_vis_path = os.path.join(output_dir, f"{prefix}soilMap_vis.png")
     img_vis.save(output_vis_path)
     print(f"[+] Visualization soil map saved to: {output_vis_path}")
     print("[*] Successfully generated both images.")
+
+
+def generate_map_quiet(task):
+    """Worker for parallel batch mode: runs generate_map with stdout suppressed."""
+    import io
+    import contextlib
+    index, seed, output_dir, args, prefix = task
+    with contextlib.redirect_stdout(io.StringIO()):
+        generate_map(seed, output_dir, args, prefix=prefix)
+    return index, seed, prefix
+
+
+def main():
+    args = parse_args()
+
+    if args.batch < 1:
+        raise SystemExit("[!] --batch must be >= 1")
+
+    # Determine base seed: system entropy (not the clock) when not provided
+    if args.seed is None:
+        base_seed = random.SystemRandom().randrange(100_000_000)
+    else:
+        base_seed = args.seed
+
+    if args.batch == 1:
+        generate_map(base_seed, args.output_dir, args)
+        return
+
+    # Derive well-spread, independent per-map seeds from the base seed.
+    # Reproducible: the same base seed always yields the same batch.
+    seeds = [int(s) for s in np.random.SeedSequence(base_seed).generate_state(args.batch)]
+
+    # Resolve parallel jobs: half the cores by default (each map already uses
+    # up to 6 threads internally for its gaussian filters).
+    jobs = args.jobs if args.jobs is not None else max(1, (os.cpu_count() or 2) // 2)
+    jobs = max(1, min(jobs, args.batch))
+
+    print(f"[*] Batch mode: generating {args.batch} maps (base seed: {base_seed}, jobs: {jobs})")
+
+    if jobs == 1:
+        for i, seed in enumerate(seeds):
+            prefix = f"{i + 1:02d}_seed_{seed}_"
+            print(f"\n[*] ===== Map {i + 1}/{args.batch} ({prefix}*) =====")
+            generate_map(seed, args.output_dir, args, prefix=prefix)
+    else:
+        tasks = [(i + 1, seed, args.output_dir, args, f"{i + 1:02d}_seed_{seed}_")
+                 for i, seed in enumerate(seeds)]
+        done = 0
+        with ProcessPoolExecutor(max_workers=jobs) as pool:
+            futures = [pool.submit(generate_map_quiet, t) for t in tasks]
+            for fut in as_completed(futures):
+                index, seed, prefix = fut.result()
+                done += 1
+                print(f"[+] ({done}/{args.batch}) Map {index:02d} done (seed {seed}) -> {prefix}soilMap.png / {prefix}soilMap_vis.png")
+
+    print(f"\n[+] Batch complete: {args.batch} maps saved under {args.output_dir}")
+
 
 if __name__ == "__main__":
     main()
