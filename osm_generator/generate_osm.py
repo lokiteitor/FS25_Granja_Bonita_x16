@@ -253,6 +253,116 @@ def main():
         h_coords = [(x, y) for x in xs_sec_h]
         add_way(h_coords, {'highway': 'secondary'})
 
+    # The PLSS grid. Defined here rather than in section 9c, where the cells are filled,
+    # because section 9b below has to know which of its roads a merged cell swallows.
+    xs_grid_lines = [0.0] + xs_ter_v + [7103.0]
+    ys_grid_lines = [1009.0] + ys_ter_h + [7650.0]
+
+    # What goes in each cell is decided first, then the roads that have to respect it are
+    # drawn (9b), and only then are the cells filled in (9c).
+
+    # 1. Select 10 random cells to place forests
+    import random
+    candidates = []
+    clear_cells = set()
+    for i in range(len(xs_grid_lines) - 1):
+        x_a = xs_grid_lines[i]
+        x_b = xs_grid_lines[i+1]
+        for j in range(len(ys_grid_lines) - 1):
+            y_a = ys_grid_lines[j]
+            y_b = ys_grid_lines[j+1]
+
+            # Forest box size (10 hectares = 316.227m x 316.227m)
+            forest_w = 316.227
+            x_f_start = x_a + 5.0
+            x_f_end = x_f_start + forest_w
+            y_f_start = y_a + 5.0
+            y_f_end = y_f_start + forest_w
+
+            if x_f_end > 7098.0:
+                continue
+
+            # Check road clearance
+            road_clear = True
+            for x in np.linspace(x_f_start, x_f_end, 5):
+                if y_f_end > get_road_y(x) - 5.0:
+                    road_clear = False
+                    break
+            if not road_clear:
+                continue
+
+            candidates.append((i, j))
+
+            # Check forest clearance (don't overlay on the existing mountain/hill forests).
+            # Recorded rather than filtered here: dropping cells before the shuffle would
+            # reshuffle every draw and move all ten forests, so the check is applied to the
+            # shuffled order instead and only the offending cells are skipped.
+            corners = [
+                (x_f_start, y_f_start),
+                (x_f_end, y_f_start),
+                (x_f_end, y_f_end),
+                (x_f_start, y_f_end)
+            ]
+            if not any(is_in_forest(cx, cy, buffer_m=5.0) for cx, cy in corners):
+                clear_cells.add((i, j))
+
+    print(f"   Found {len(candidates)} candidate cells for 10-hectare random forests "
+          f"({len(clear_cells)} clear of the mountain forests).")
+    # Deterministic seeded selection
+    rng = random.Random(42)
+    candidates.sort()
+    rng.shuffle(candidates)
+    selected_cells = set([c for c in candidates if c in clear_cells][:10])
+
+    # PLSS cells (x-index, y-index into xs_grid_lines / ys_grid_lines) that are
+    # forested instead of farmed. (2, 8) is the strip x[1600-2400] y[7409-7650],
+    # wedged between the last tertiary road and the Southern Link Road, facing the
+    # south-western forest across the road.
+    wooded_cells = {(2, 8)}
+
+    # PLSS cells kept as yard rather than farmland. (5, 8) is x[4000-4800] y[7409-7650],
+    # the 18.2 ha strip against the Southern Link Road that used to be Field 61.
+    yard_cells = {(5, 8)}
+
+    # PLSS cells merged into one field, as (column, first row, last row). Only cells whose
+    # field fills the whole cell qualify - one clipped by the forest or by the Southern
+    # Link Road, or one holding a random forest, is left alone - so no merged field ever
+    # runs into a wood. The tertiary road along each interior boundary is cut to match.
+    plss_merges = [(0, 2, 3), (1, 0, 1), (2, 4, 5), (3, 6, 7), (4, 2, 3),
+                   (5, 4, 5), (6, 0, 1), (7, 3, 4), (8, 1, 2)]
+
+    merge_of = {}       # (i, j) -> (i, j0, j1) for every cell a merge covers
+    road_gaps = {}      # y of a horizontal road -> [(x from, x to)] it must not span
+    for i, j0, j1 in plss_merges:
+        cells = [(i, j) for j in range(j0, j1 + 1)]
+        # A merge is only sound over cells that hold one plain full-cell field. Checked
+        # rather than assumed, because a different seed or a different DEM can turn one of
+        # them into a random forest and the merge would then straddle it unnoticed.
+        taken = [c for c in cells if c in selected_cells or c in wooded_cells
+                 or c in yard_cells]
+        if taken:
+            print(f"   WARNING: PLSS merge {(i, j0, j1)} skipped, cells {taken} are not "
+                  f"plain fields.")
+            continue
+        for c in cells:
+            merge_of[c] = (i, j0, j1)
+        for jb in range(j0 + 1, j1 + 1):
+            road_gaps.setdefault(ys_grid_lines[jb], []).append(
+                (xs_grid_lines[i], xs_grid_lines[i+1]))
+
+    def split_at_gaps(pts, gaps, axis):
+        # Emit the polyline in pieces, dropping the stretches the gaps cover. The boundary
+        # points stay on both sides, so each piece still ends on the junction it shares
+        # with the crossing road and the network stays connected.
+        pieces = [[]]
+        for k, pt in enumerate(pts):
+            pieces[-1].append(pt)
+            if k + 1 < len(pts):
+                lo, hi = sorted((pt[axis], pts[k+1][axis]))
+                if any(g0 - 1e-6 <= lo and hi <= g1 + 1e-6 for g0, g1 in gaps):
+                    pieces.append([])
+        return [p for p in pieces if len(p) >= 2]
+
     # 9b. Tertiary Roads (PLSS Dirt Grid) - Stopping before entering forests
     # Vertical tertiary roads
     for x in xs_ter_v:
@@ -296,78 +406,15 @@ def main():
                 h_pts.append((x_forest_limit, y))
                 
         h_pts.sort(key=lambda pt: pt[0])
-        add_way(h_pts, {'highway': 'tertiary'})
+        # A vertically merged cell leaves this road running through the middle of the
+        # field, so the stretch it covers is left out.
+        for piece in split_at_gaps(h_pts, road_gaps.get(y, []), 0):
+            add_way(piece, {'highway': 'tertiary'})
 
     # 9c. PLSS Farmlands & Random Forests
-    xs_grid_lines = [0.0] + xs_ter_v + [7103.0]
-    ys_grid_lines = [1009.0] + ys_ter_h + [7650.0]
-    
-    # 1. Select 10 random cells to place forests
-    import random
-    candidates = []
-    clear_cells = set()
-    for i in range(len(xs_grid_lines) - 1):
-        x_a = xs_grid_lines[i]
-        x_b = xs_grid_lines[i+1]
-        for j in range(len(ys_grid_lines) - 1):
-            y_a = ys_grid_lines[j]
-            y_b = ys_grid_lines[j+1]
-            
-            # Forest box size (10 hectares = 316.227m x 316.227m)
-            forest_w = 316.227
-            x_f_start = x_a + 5.0
-            x_f_end = x_f_start + forest_w
-            y_f_start = y_a + 5.0
-            y_f_end = y_f_start + forest_w
-            
-            if x_f_end > 7098.0:
-                continue
-                
-            # Check road clearance
-            road_clear = True
-            for x in np.linspace(x_f_start, x_f_end, 5):
-                if y_f_end > get_road_y(x) - 5.0:
-                    road_clear = False
-                    break
-            if not road_clear:
-                continue
-                
-            candidates.append((i, j))
-
-            # Check forest clearance (don't overlay on the existing mountain/hill forests).
-            # Recorded rather than filtered here: dropping cells before the shuffle would
-            # reshuffle every draw and move all ten forests, so the check is applied to the
-            # shuffled order instead and only the offending cells are skipped.
-            corners = [
-                (x_f_start, y_f_start),
-                (x_f_end, y_f_start),
-                (x_f_end, y_f_end),
-                (x_f_start, y_f_end)
-            ]
-            if not any(is_in_forest(cx, cy, buffer_m=5.0) for cx, cy in corners):
-                clear_cells.add((i, j))
-
-    print(f"   Found {len(candidates)} candidate cells for 10-hectare random forests "
-          f"({len(clear_cells)} clear of the mountain forests).")
-    # Deterministic seeded selection
-    rng = random.Random(42)
-    candidates.sort()
-    rng.shuffle(candidates)
-    selected_cells = set([c for c in candidates if c in clear_cells][:10])
-    
     field_idx = 1
     forest_idx = 1
     cell_forest_idx = 1
-
-    # PLSS cells (x-index, y-index into xs_grid_lines / ys_grid_lines) that are
-    # forested instead of farmed. (2, 8) is the strip x[1600-2400] y[7409-7650],
-    # wedged between the last tertiary road and the Southern Link Road, facing the
-    # south-western forest across the road.
-    wooded_cells = {(2, 8)}
-
-    # PLSS cells kept as yard rather than farmland. (5, 8) is x[4000-4800] y[7409-7650],
-    # the 18.2 ha strip against the Southern Link Road that used to be Field 61.
-    yard_cells = {(5, 8)}
 
     print("   Generating PLSS farmlands (fields) and 10 random forests...")
     for i in range(len(xs_grid_lines) - 1):
@@ -376,7 +423,16 @@ def main():
         for j in range(len(ys_grid_lines) - 1):
             y_a = ys_grid_lines[j]
             y_b = ys_grid_lines[j+1]
-            
+
+            # A merged cell is emitted once, at its top row, as a field reaching down to
+            # the bottom of the last row of the merge. The 10 m road corridors in between
+            # become farmland, and 9b already left those stretches of road out.
+            mrg = merge_of.get((i, j))
+            if mrg:
+                if j != mrg[1]:
+                    continue
+                y_b = ys_grid_lines[mrg[2] + 1]
+
             if (i, j) in selected_cells:
                 # Add 10-hectare forest at the top-left of the cell
                 forest_w = 316.227
@@ -487,6 +543,11 @@ def main():
                         else:
                             add_way(coords, {'landuse': 'farmland', 'name': f'Field {field_idx}'})
                         field_idx += 1
+                elif mrg:
+                    # Losing a merged field costs every cell it covered, not just one, so
+                    # it is worth saying out loud rather than quietly leaving a hole.
+                    print(f"   WARNING: merged PLSS field {mrg} came out invalid; "
+                          f"{mrg[2] - mrg[1] + 1} cells left empty.")
 
     print(f"   Added {field_idx - 1} PLSS fields, {forest_idx - 1} random forests "
           f"and {cell_forest_idx - 1} wooded cells.")
@@ -495,18 +556,19 @@ def main():
     # Adjacent columns are merged until a parcel reaches this size, so a strip ends up
     # with a handful of large fields instead of a long run of small ones. The 10 m gap
     # inside a merged parcel becomes farmland and the road that sat in it goes away.
-    NORTH_MIN_PARCEL_HA = 20.0
+    NORTH_MIN_PARCEL_HA = 22.0
 
     # ...except at the eastern end of every strip, which faces the town (x 7118-8142)
-    # across the railway. That end is packed with fixed smallholdings instead of the
-    # random mix, and they are exempt from the merge, so the map keeps small parcels
-    # for small machinery right where the town is. The zone is sized backwards from
-    # x=8177 so a whole number of columns fits exactly, with no runt against the edge.
-    NORTH_SMALL_HA = 5.0
-    NORTH_SMALL_COUNT = 4
+    # across the railway. That end is packed with fixed-size columns instead of the random
+    # mix, and they are exempt from the merge, so the map keeps small parcels for small
+    # machinery near the town: four 5 ha smallholdings against the eastern edge, then two
+    # 10 ha columns behind them. Listed from the eastern edge westwards, and laid out
+    # backwards from x=8177, so the block finishes flush with the edge and no column ends
+    # up as a runt.
+    NORTH_FIXED_BANDS = [(5.0, 4), (10.0, 2)]  # (hectares, number of columns)
 
     def pack_strip_horiz(y_start, y_end, seed):
-        # Returns the raw column boundaries as (x_start, x_end, is_small). Sizes are
+        # Returns the raw column boundaries as (x_start, x_end, is_fixed). Sizes are
         # recomputed from the geometry after the merge pass, because merging absorbs
         # the gaps in between, and the roads are derived from the surviving parcels.
         import random
@@ -516,8 +578,15 @@ def main():
         x_curr = 15.0
         field_h = y_end - y_start
 
-        w_small = (NORTH_SMALL_HA * 10000.0) / field_h
-        x_small = 8177.0 - (NORTH_SMALL_COUNT * w_small + (NORTH_SMALL_COUNT - 1) * 10.0)
+        # Place the fixed bands first, walking west from the eastern edge.
+        bands = []
+        x_edge = 8177.0
+        for band_ha, count in NORTH_FIXED_BANDS:
+            w = (band_ha * 10000.0) / field_h
+            x_band = x_edge - (count * w + (count - 1) * 10.0)
+            bands.append((x_band, w, count))
+            x_edge = x_band - 10.0
+        x_fixed = x_edge + 10.0     # western edge of the whole fixed block
 
         # We select sizes from [5, 10, 20]
         # To have a good mix, we weight them: 5 ha (weight 2), 10 ha (weight 2), 20 ha (weight 1)
@@ -527,19 +596,22 @@ def main():
             size = rng.choice(choices)
             w = (size * 10000.0) / field_h
 
-            # Check if this field fits (needs at least w + 10m before the smallholdings)
-            if x_curr + w + 10.0 > x_small - 10.0:
-                # Last field of the mix: adjust to fill the space up to the smallholdings
-                if x_small - 10.0 - x_curr >= 50.0:
-                    fields.append((x_curr, x_small - 10.0, False))
+            # Check if this field fits (needs at least w + 10m before the fixed block)
+            if x_curr + w + 10.0 > x_fixed - 10.0:
+                # Last field of the mix: adjust to fill the space up to the fixed block
+                if x_fixed - 10.0 - x_curr >= 50.0:
+                    fields.append((x_curr, x_fixed - 10.0, False))
                 break
 
             fields.append((x_curr, x_curr + w, False))
             x_curr += w + 10.0
 
-        for k in range(NORTH_SMALL_COUNT):
-            x_s = x_small + k * (w_small + 10.0)
-            fields.append((x_s, x_s + w_small, True))
+        # The bands were built east to west, so they go back in reversed to keep the
+        # column list running west to east like the rest of the strip.
+        for x_band, w, count in reversed(bands):
+            for k in range(count):
+                x_s = x_band + k * (w + 10.0)
+                fields.append((x_s, x_s + w, True))
 
         return fields
 
@@ -549,19 +621,19 @@ def main():
 
         spans = [(a, b) for sn, a, b in north_yards if sn == s_idx + 1]
 
-        def kind_of(x_s, x_e, is_small):
+        def kind_of(x_s, x_e, is_fixed):
             if any(x_s <= b and a <= x_e for a, b in spans):
                 return 'Y'
-            return 'S' if is_small else 'F'
+            return 'S' if is_fixed else 'F'
 
-        merged = []  # (x_start, x_end, kind), kind: 'F' field, 'Y' yard, 'S' smallholding
+        merged = []  # (x_start, x_end, kind), kind: 'F' field, 'Y' yard, 'S' fixed column
         run = None   # [x_start, x_end, kind]
 
         def close():
             # A field run cut short - by a yard, by the smallholdings, or by the end of
             # the strip - is folded into the field before it rather than surviving as an
             # undersized parcel of its own. Only a plain field can absorb it: doing it
-            # to a yard or a smallholding would defeat the point of having one.
+            # to a yard or a fixed column would defeat the point of having one.
             nonlocal run
             if not run:
                 return
@@ -572,11 +644,11 @@ def main():
                 merged.append((run[0], run[1], run[2]))
             run = None
 
-        for x_s, x_e, is_small in fields:
-            kind = kind_of(x_s, x_e, is_small)
+        for x_s, x_e, is_fixed in fields:
+            kind = kind_of(x_s, x_e, is_fixed)
             # A yard grows over as many columns as its span covers, a plain field over
-            # as many as it needs to reach the target size, and a smallholding over
-            # none at all - staying small is the whole point of it.
+            # as many as it needs to reach the target size, and a fixed column over none
+            # at all - keeping its declared size is the whole point of it.
             if run and (run[2] != kind or kind == 'S'):
                 close()
             run = [run[0] if run else x_s, x_e, kind]
