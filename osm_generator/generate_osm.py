@@ -492,44 +492,109 @@ def main():
           f"and {cell_forest_idx - 1} wooded cells.")
 
     # 9d. Northern Farmlands & Tertiary Roads (Horizontal layout, 15m borders)
+    # Adjacent columns are merged until a parcel reaches this size, so a strip ends up
+    # with a handful of large fields instead of a long run of small ones. The 10 m gap
+    # inside a merged parcel becomes farmland and the road that sat in it goes away.
+    NORTH_MIN_PARCEL_HA = 20.0
+
+    # ...except at the eastern end of every strip, which faces the town (x 7118-8142)
+    # across the railway. That end is packed with fixed smallholdings instead of the
+    # random mix, and they are exempt from the merge, so the map keeps small parcels
+    # for small machinery right where the town is. The zone is sized backwards from
+    # x=8177 so a whole number of columns fits exactly, with no runt against the edge.
+    NORTH_SMALL_HA = 5.0
+    NORTH_SMALL_COUNT = 4
+
     def pack_strip_horiz(y_start, y_end, seed):
+        # Returns the raw column boundaries as (x_start, x_end, is_small). Sizes are
+        # recomputed from the geometry after the merge pass, because merging absorbs
+        # the gaps in between, and the roads are derived from the surviving parcels.
         import random
         rng = random.Random(seed)
         fields = []
-        roads = []
-        
+
         x_curr = 15.0
         field_h = y_end - y_start
-        
+
+        w_small = (NORTH_SMALL_HA * 10000.0) / field_h
+        x_small = 8177.0 - (NORTH_SMALL_COUNT * w_small + (NORTH_SMALL_COUNT - 1) * 10.0)
+
         # We select sizes from [5, 10, 20]
         # To have a good mix, we weight them: 5 ha (weight 2), 10 ha (weight 2), 20 ha (weight 1)
         choices = [5, 5, 10, 10, 20]
-        
+
         while True:
             size = rng.choice(choices)
             w = (size * 10000.0) / field_h
-            
-            # Check if this field fits (needs at least w + 10m before 8177.0)
-            if x_curr + w + 10.0 > 8177.0:
-                # Last field: adjust to fill remaining space up to 8177.0
-                w_rem = 8177.0 - x_curr
-                if w_rem >= 50.0:
-                    actual_size = (w_rem * field_h) / 10000.0
-                    fields.append((x_curr, x_curr + w_rem, actual_size))
+
+            # Check if this field fits (needs at least w + 10m before the smallholdings)
+            if x_curr + w + 10.0 > x_small - 10.0:
+                # Last field of the mix: adjust to fill the space up to the smallholdings
+                if x_small - 10.0 - x_curr >= 50.0:
+                    fields.append((x_curr, x_small - 10.0, False))
                 break
-                
-            fields.append((x_curr, x_curr + w, size))
-            # Vertical road in the gap (centered)
-            roads.append(x_curr + w + 5.0)
+
+            fields.append((x_curr, x_curr + w, False))
             x_curr += w + 10.0
-            
-        return fields, roads
+
+        for k in range(NORTH_SMALL_COUNT):
+            x_s = x_small + k * (w_small + 10.0)
+            fields.append((x_s, x_s + w_small, True))
+
+        return fields
+
+    def merge_strip_fields(fields, field_h, s_idx):
+        def ha(x_s, x_e):
+            return (x_e - x_s) * field_h / 10000.0
+
+        spans = [(a, b) for sn, a, b in north_yards if sn == s_idx + 1]
+
+        def kind_of(x_s, x_e, is_small):
+            if any(x_s <= b and a <= x_e for a, b in spans):
+                return 'Y'
+            return 'S' if is_small else 'F'
+
+        merged = []  # (x_start, x_end, kind), kind: 'F' field, 'Y' yard, 'S' smallholding
+        run = None   # [x_start, x_end, kind]
+
+        def close():
+            # A field run cut short - by a yard, by the smallholdings, or by the end of
+            # the strip - is folded into the field before it rather than surviving as an
+            # undersized parcel of its own. Only a plain field can absorb it: doing it
+            # to a yard or a smallholding would defeat the point of having one.
+            nonlocal run
+            if not run:
+                return
+            if (run[2] == 'F' and ha(run[0], run[1]) < NORTH_MIN_PARCEL_HA
+                    and merged and merged[-1][2] == 'F'):
+                merged[-1] = (merged[-1][0], run[1], 'F')
+            else:
+                merged.append((run[0], run[1], run[2]))
+            run = None
+
+        for x_s, x_e, is_small in fields:
+            kind = kind_of(x_s, x_e, is_small)
+            # A yard grows over as many columns as its span covers, a plain field over
+            # as many as it needs to reach the target size, and a smallholding over
+            # none at all - staying small is the whole point of it.
+            if run and (run[2] != kind or kind == 'S'):
+                close()
+            run = [run[0] if run else x_s, x_e, kind]
+            if kind == 'F' and ha(run[0], run[1]) >= NORTH_MIN_PARCEL_HA:
+                merged.append((run[0], run[1], 'F'))
+                run = None
+        close()
+        return merged
 
     print("   Generating Northern Farmlands (Horizontal standard, 15m borders)...")
 
-    # Northern strip parcels (strip number, field number) kept as yard, not farmland.
-    north_yards = {(5, 1), (5, 12)}
-    
+    # Northern parcels kept as yard, not farmland, given as (strip number, X from, X to):
+    # every column of that strip the span touches joins the yard, so widening a yard is
+    # a matter of widening its span. Spans rather than column indices, because the
+    # indices shift whenever the packing changes. (5, 15, 20) is the western corner;
+    # (5, 7400, 7700) faces the town and covers two of the 5 ha columns.
+    north_yards = {(5, 15.0, 20.0), (5, 7400.0, 7700.0)}
+
     # Define 5 strips of height 180m
     strips = [
         (15.0, 195.0),
@@ -555,10 +620,12 @@ def main():
 
     # Generate fields & vertical roads for each strip
     for s_idx, (y_s, y_e) in enumerate(strips):
-        fields, roads = pack_strip_horiz(y_s, y_e, seed=(303 + s_idx))
-        
+        field_h = y_e - y_s
+        parcels = merge_strip_fields(pack_strip_horiz(y_s, y_e, seed=(303 + s_idx)),
+                                     field_h, s_idx)
+
         # Add fields
-        for f_idx, (x_start, x_end, size) in enumerate(fields):
+        for p_idx, (x_start, x_end, kind) in enumerate(parcels, 1):
             coords = [
                 (x_start, y_s),
                 (x_end, y_s),
@@ -566,12 +633,17 @@ def main():
                 (x_start, y_e),
                 (x_start, y_s)
             ]
-            label = f'N{s_idx+1}_{f_idx+1}'
-            if (s_idx + 1, f_idx + 1) in north_yards:
+            label = f'N{s_idx+1}_{p_idx}'
+            if kind == 'Y':
                 add_way(coords, {'landuse': 'farmyard', 'name': f'Yard {label}'})
             else:
+                size = (x_end - x_start) * field_h / 10000.0
                 add_way(coords, {'landuse': 'farmland', 'name': f'Field {label} ({size:.1f} ha)'})
-            
+
+        # Only the gaps that still separate two parcels keep their road; the ones
+        # swallowed by a merge go with it.
+        roads = [x_end + 5.0 for x_start, x_end, _ in parcels[:-1]]
+
         # Add vertical roads in gaps connecting adjacent horizontal roads
         for rx in roads:
             if s_idx == 0:
@@ -661,7 +733,9 @@ def main():
     # 9f. Southern Farmlands & Tertiary Roads (Horizontal layout, 15m borders)
     print("   Generating Southern Farmlands (Horizontal 10 hectares) and tertiary roads...")
     
-    def pack_south_pocket(x_start, x_end, seed, p_name):
+    # Unlike the northern and eastern packers, this one draws no random sizes: every
+    # column is a fixed 10 ha, so there is no seed to pass in.
+    def pack_south_pocket(x_start, x_end, p_name):
         y_s1, y_e1 = 7665.0, 7916.0
         y_s2, y_e2 = 7926.0, 8177.0
         
@@ -676,51 +750,44 @@ def main():
         add_way([(x_start, 7650.0), (x_start, 8177.0)], {'highway': 'tertiary'})
         add_way([(x_end, 7650.0), (x_end, 8177.0)], {'highway': 'tertiary'})
         
-        # Pack fields
-        import random
-        rng = random.Random(seed)
-        
+        # The column boundaries are worked out before anything is emitted, because
+        # the last one is not a plain 10 ha column: the leftover strip at the end of
+        # the pocket is absorbed by it instead of being left as a runt parcel, and
+        # the road that used to separate the two goes with it.
+        cols = []
+        x_curr = x_start
+        while x_curr + w_10ha + 10.0 <= x_end:
+            cols.append((x_curr, x_curr + w_10ha))
+            x_curr += w_10ha + 10.0
+        if cols:
+            cols[-1] = (cols[-1][0], x_end)
+        elif x_end - x_start >= 100.0:
+            cols.append((x_start, x_end))
+
         for strip_idx, (y_s, y_e) in enumerate([(y_s1, y_e1), (y_s2, y_e2)]):
-            x_curr = x_start
-            f_idx = 1
-            roads = []
-            
-            while True:
-                if x_curr + w_10ha + 10.0 > x_end:
-                    w_rem = x_end - x_curr
-                    if w_rem >= 100.0:
-                        actual_size = (w_rem * field_h) / 10000.0
-                        coords = [
-                            (x_curr, y_s),
-                            (x_curr + w_rem, y_s),
-                            (x_curr + w_rem, y_e),
-                            (x_curr, y_e),
-                            (x_curr, y_s)
-                        ]
-                        add_way(coords, {'landuse': 'farmland', 'name': f'Field S_{p_name}{strip_idx+1}_{f_idx} ({actual_size:.1f} ha)'})
-                    break
-                    
+            for f_idx, (x_s, x_e) in enumerate(cols, 1):
+                size = ((x_e - x_s) * field_h) / 10000.0
                 coords = [
-                    (x_curr, y_s),
-                    (x_curr + w_10ha, y_s),
-                    (x_curr + w_10ha, y_e),
-                    (x_curr, y_e),
-                    (x_curr, y_s)
+                    (x_s, y_s),
+                    (x_e, y_s),
+                    (x_e, y_e),
+                    (x_s, y_e),
+                    (x_s, y_s)
                 ]
-                add_way(coords, {'landuse': 'farmland', 'name': f'Field S_{p_name}{strip_idx+1}_{f_idx} (10.0 ha)'})
-                
-                roads.append(x_curr + w_10ha + 5.0)
-                x_curr += w_10ha + 10.0
-                f_idx += 1
-                
-            if strip_idx == 0:
-                for rx in roads:
-                    add_way([(rx, 7650.0), (rx, 8177.0)], {'highway': 'tertiary'})
+                add_way(coords, {
+                    'landuse': 'farmland',
+                    'name': f'Field S_{p_name}{strip_idx+1}_{f_idx} ({size:.1f} ha)'
+                })
+
+        # Vertical roads in the gaps between columns. Both strips share the same
+        # column layout, so each road is emitted once and spans the whole pocket.
+        for x_s, x_e in cols[:-1]:
+            add_way([(x_e + 5.0, 7650.0), (x_e + 5.0, 8177.0)], {'highway': 'tertiary'})
 
     # Pocket A: between Yard 7 and bottom-left forest
-    pack_south_pocket(540.0, 1981.8, seed=505, p_name="A")
+    pack_south_pocket(540.0, 1981.8, p_name="A")
     # Pocket B: between bottom-left forest and Southern Link Road curve 1
-    pack_south_pocket(2675.4, 5053.0, seed=606, p_name="B")
+    pack_south_pocket(2675.4, 5053.0, p_name="B")
 
     # 10. Forest polygons (elevations >= 370m)
     def get_border(pt):
