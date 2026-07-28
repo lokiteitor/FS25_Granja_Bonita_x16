@@ -926,13 +926,52 @@ def main():
             
         return polygons
 
+    # The south-western forest has a box of its own: the gap the two southern pockets
+    # leave between them (see pack_south_pocket above), bounded north by the straight run
+    # of the Southern Link Road. The 370 m contour pokes a narrow tongue out of it to the
+    # north, across the road and into the wooded PLSS cell behind, so that forest is
+    # clipped back to the box. Its X already sits inside with the same 15 m clearance the
+    # southern fields keep, so only the northern edge needs cutting.
+    SOUTH_FOREST_STRAIGHT_X = 5068.0    # where the Southern Link Road stops running E-W
+    SOUTH_FOREST_BOX = (1981.8 + 15.0, 7650.0 + 15.0, 2675.4 - 15.0)  # x from, y from, x to
+
+    def clip_to_south_of(poly, y_min):
+        # Sutherland-Hodgman against the single edge y >= y_min.
+        ring = list(poly)
+        while len(ring) > 1 and math.dist(ring[0], ring[-1]) < 1e-6:
+            ring.pop()
+        out = []
+        for k, a in enumerate(ring):
+            b = ring[(k + 1) % len(ring)]
+            a_in, b_in = a[1] >= y_min, b[1] >= y_min
+            if a_in:
+                out.append((float(a[0]), float(a[1])))
+            if a_in != b_in:
+                t = (y_min - a[1]) / (b[1] - a[1])
+                out.append((float(a[0] + t * (b[0] - a[0])), y_min))
+        return out + [out[0]] if len(out) >= 3 else None
+
     print("   Extracting and generating forest areas from DEM (elevation >= 370m)...")
     forest_polys = get_forest_polygons()
     for i, poly in enumerate(forest_polys):
-        # No clipping against the Southern Link Road: the 370m contour is followed
-        # as-is, so the forest spills over to the North/West side where the terrain
-        # actually rises. The roads and fields already keep clear of it via
-        # is_in_forest(), and the infill pass below closes whatever is left over.
+        # Everywhere else there is no clipping against the Southern Link Road: the 370m
+        # contour is followed as-is, so the forest spills over to the North/West side
+        # where the terrain actually rises. The roads and fields already keep clear of it
+        # via is_in_forest(), and the infill pass below closes whatever is left over.
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        x_from, y_from, x_to = SOUTH_FOREST_BOX
+        if max(xs) < SOUTH_FOREST_STRAIGHT_X and max(ys) > y_from and min(ys) < y_from:
+            clipped = clip_to_south_of(poly, y_from)
+            if clipped is None:
+                print(f"   WARNING: south-western forest emptied by the clip; left as-is.")
+            else:
+                if min(xs) < x_from - 0.1 or max(xs) > x_to + 0.1:
+                    print(f"   WARNING: south-western forest spans x[{min(xs):.1f},"
+                          f"{max(xs):.1f}], outside its box x[{x_from:.1f},{x_to:.1f}].")
+                print(f"   Clipped the south-western forest to y >= {y_from:.0f}: "
+                      f"{len(poly)} -> {len(clipped)} nodes.")
+                poly = clipped
         add_way(list(poly), {
             'natural': 'wood',
             'landuse': 'farmyard',
