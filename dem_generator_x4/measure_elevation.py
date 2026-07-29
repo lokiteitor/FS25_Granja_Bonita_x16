@@ -2,11 +2,11 @@ import numpy as np
 from PIL import Image
 
 def main():
-    img_path = "dem_new_6k.png"
+    img_path = "dem_new_8k.png"
     img = Image.open(img_path)
     data = np.array(img, dtype=np.float32)
 
-    offset_m = 1024.0
+    offset_m = 2048.0
 
     # 1. Reservoir area
     rx0 = int(3879.0 + offset_m)
@@ -18,12 +18,11 @@ def main():
     res_min_raw = res_sub.min()
     res_min_m = res_min_raw / 100.0
 
-    # 2. Playable area SE quadrant (or full playable area)
-    # Playable area bounds are x, y in [1024, 5120]
-    px0 = int(1024)
-    px1 = int(5120)
-    py0 = int(1024)
-    py1 = int(5120)
+    # 2. Playable area bounds are x, y in [2048, 6144]
+    px0 = int(2048)
+    px1 = int(6144)
+    py0 = int(2048)
+    py1 = int(6144)
 
     playable_sub = data[py0:py1+1, px0:px1+1]
     max_idx = np.unravel_index(np.argmax(playable_sub), playable_sub.shape)

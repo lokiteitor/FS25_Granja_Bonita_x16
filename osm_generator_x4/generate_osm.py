@@ -32,7 +32,7 @@ def main():
     # 0. Load DEM once for elevation checks
     Image.MAX_IMAGE_PIXELS = None
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    dem_path = os.path.normpath(os.path.join(script_dir, "../dem_generator_x4/dem_new_6k.png"))
+    dem_path = os.path.normpath(os.path.join(script_dir, "../dem_generator_x4/dem_new_8k.png"))
 
     if not os.path.exists(dem_path):
         print(f"Error: DEM file not found at {dem_path}")
@@ -40,7 +40,7 @@ def main():
 
     img = Image.open(dem_path)
     data = np.array(img, dtype=np.float32)
-    playable = data[1024:5120, 1024:5120]
+    playable = data[2048:6144, 2048:6144]
 
     # Forest mask (elevation >= 370m), cleaned of sub-hectare crumbs: flattening the
     # old SW hill leaves the odd 30m knob just over the threshold, whose polygon the
