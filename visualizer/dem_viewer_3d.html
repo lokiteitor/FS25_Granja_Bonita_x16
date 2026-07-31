@@ -607,9 +607,9 @@
             </div>
 
             <div class="legend" id="soil-legend" style="display: none;">
-                <div class="legend-item"><span class="legend-swatch" style="background:#469632"></span>Franco (125%)</div>
                 <div class="legend-item"><span class="legend-swatch" style="background:#7846A0"></span>Arcilla Limosa (80%)</div>
                 <div class="legend-item"><span class="legend-swatch" style="background:#B4823C"></span>Franco Arenoso (100%)</div>
+                <div class="legend-item"><span class="legend-swatch" style="background:#469632"></span>Franco (125%)</div>
                 <div class="legend-item"><span class="legend-swatch" style="background:#DCB950"></span>Arena Limosa (75%)</div>
             </div>
         </div>
@@ -751,7 +751,7 @@
 
         // Soil layer (Precision Farming)
         const SOIL_AVAILABLE = true;
-        const SOIL_TYPES = [{"name": "Franco", "nameEn": "Loam", "yield": "125%", "color": "#469632"}, {"name": "Arcilla Limosa", "nameEn": "Silty Clay", "yield": "80%", "color": "#7846A0"}, {"name": "Franco Arenoso", "nameEn": "Sandy Loam", "yield": "100%", "color": "#B4823C"}, {"name": "Arena Limosa", "nameEn": "Loamy Sand", "yield": "75%", "color": "#DCB950"}];
+        const SOIL_TYPES = [{"name": "Arcilla Limosa", "nameEn": "Silty Clay", "yield": "80%", "color": "#7846A0"}, {"name": "Franco Arenoso", "nameEn": "Sandy Loam", "yield": "100%", "color": "#B4823C"}, {"name": "Franco", "nameEn": "Loam", "yield": "125%", "color": "#469632"}, {"name": "Arena Limosa", "nameEn": "Loamy Sand", "yield": "75%", "color": "#DCB950"}];
         const SOIL_NONE = 255;
         let soilTexture = null;
         let soilData = null;      // Uint8Array of soil indices, one per texture pixel

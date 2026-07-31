@@ -253,9 +253,9 @@ def main():
 
     # index -> (spanish name, english name, yield, color); mirrors pf_generator/generate_soil.py
     soil_types = [
-        {"name": "Franco", "name_en": "Loam", "yield": "125%", "color": (70, 150, 50)},
         {"name": "Arcilla Limosa", "name_en": "Silty Clay", "yield": "80%", "color": (120, 70, 160)},
         {"name": "Franco Arenoso", "name_en": "Sandy Loam", "yield": "100%", "color": (180, 130, 60)},
+        {"name": "Franco", "name_en": "Loam", "yield": "125%", "color": (70, 150, 50)},
         {"name": "Arena Limosa", "name_en": "Loamy Sand", "yield": "75%", "color": (220, 185, 80)},
     ]
     SOIL_NONE = 255  # marker for "outside the playable area"

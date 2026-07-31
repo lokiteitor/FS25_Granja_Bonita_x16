@@ -87,9 +87,9 @@ def generate_map(seed, output_dir, args, prefix=""):
         noise_patch = combine_noise_field(futures_patch)
     
     # Target proportions:
-    # 0 (Franco / Loam): 43.55% (1826620 px)
-    # 1 (Arcilla Limosa / Silty Clay): 5.0% (209715 px)
-    # 2 (Franco Arenoso / Sandy Loam): 46.45% (1948254 px)
+    # 0 (Arcilla Limosa / Silty Clay): 5.0% (209715 px)
+    # 1 (Franco Arenoso / Sandy Loam): 46.45% (1948254 px)
+    # 2 (Franco / Loam): 43.55% (1826620 px)
     # 3 (Arena Limosa / Loamy Sand): 5.0% (209715 px)
     
     # Total pixels = 4,194,304
@@ -103,24 +103,24 @@ def generate_map(seed, output_dir, args, prefix=""):
     zone_B_mask = (noise_zone < threshold_zone)
     zone_A_mask = ~zone_B_mask
     
-    # Step 2: Split Zone A (Arena Limosa 3 [5.0%] vs Franco Arenoso 2 [46.45%])
+    # Step 2: Split Zone A (Arena Limosa 3 [5.0%] vs Franco Arenoso 1 [46.45%])
     # Inside Zone A, Arena Limosa proportion is 5.0 / 51.45 = 9.718173%
     pct_val3_in_A = 9.718173
     noise_patch_A = noise_patch[zone_A_mask]
     threshold_A = np.percentile(noise_patch_A, pct_val3_in_A)
     
-    # Step 3: Split Zone B (Franco 0 [43.55%] vs Arcilla Limosa 1 [5.0%])
+    # Step 3: Split Zone B (Franco 2 [43.55%] vs Arcilla Limosa 0 [5.0%])
     # Inside Zone B, Franco proportion is 43.55 / 48.55 = 89.701339%
-    pct_val0_in_B = 89.701339
+    pct_val2_in_B = 89.701339
     noise_patch_B = noise_patch[zone_B_mask]
-    threshold_B = np.percentile(noise_patch_B, pct_val0_in_B)
+    threshold_B = np.percentile(noise_patch_B, pct_val2_in_B)
     
     # Initialize soil map array
     soil_map = np.zeros((S, S), dtype=np.uint8)
     
     # Assign soil types
-    soil_map[zone_A_mask] = np.where(noise_patch[zone_A_mask] < threshold_A, 3, 2)
-    soil_map[zone_B_mask] = np.where(noise_patch[zone_B_mask] < threshold_B, 0, 1)
+    soil_map[zone_A_mask] = np.where(noise_patch[zone_A_mask] < threshold_A, 3, 1)
+    soil_map[zone_B_mask] = np.where(noise_patch[zone_B_mask] < threshold_B, 2, 0)
     
     # Check pixel distribution
     unique, counts = np.unique(soil_map, return_counts=True)
@@ -128,9 +128,9 @@ def generate_map(seed, output_dir, args, prefix=""):
     
     # Soil Metadata
     soil_meta = {
-        0: {"name_es": "Franco", "name_en": "Loam", "yield": "125%", "color": (70, 150, 50)},
-        1: {"name_es": "Arcilla Limosa", "name_en": "Silty Clay", "yield": "80%", "color": (120, 70, 160)},
-        2: {"name_es": "Franco Arenoso", "name_en": "Sandy Loam", "yield": "100%", "color": (180, 130, 60)},
+        0: {"name_es": "Arcilla Limosa", "name_en": "Silty Clay", "yield": "80%", "color": (120, 70, 160)},
+        1: {"name_es": "Franco Arenoso", "name_en": "Sandy Loam", "yield": "100%", "color": (180, 130, 60)},
+        2: {"name_es": "Franco", "name_en": "Loam", "yield": "125%", "color": (70, 150, 50)},
         3: {"name_es": "Arena Limosa", "name_en": "Loamy Sand", "yield": "75%", "color": (220, 185, 80)}
     }
     
@@ -235,7 +235,7 @@ def generate_map(seed, output_dir, args, prefix=""):
         
         # Rendimiento & stats
         y_pot_str = "Rendimiento: " + meta["yield"]
-        if v == 0:  # Highlight Loam
+        if v == 2:  # Highlight Loam
             y_pot_str += " \u2728"
             
         draw.text((text_x, y_offset + 48), y_pot_str, fill=(200, 210, 200), font=font_regular)
