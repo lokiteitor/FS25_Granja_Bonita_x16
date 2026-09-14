@@ -109,27 +109,40 @@ middle of a wood is perfectly realistic ground and is still wrong here, because 
 the setback the wood was placed with meaningless - trees held off one road by ten metres
 and bisected by the next.
 
-Eleven shelterbelts, 100 m across: five running north to south and six east to west.
-Neither length is a choice, and they are different numbers for a reason worth knowing.
-A north-south belt runs from one cross road to the next held off each end by that road's
-clearance: the mile less twice 14 m, 1581.3 m, landing on the survey the whole map is built
-on. East to west there is no such grid - the two trunk roads are 4973 m apart, three
-sections and a bit, and the river's valley runs down the middle of what is between them -
-so a transversal belt takes its length from the *band* a trunk road and the map edge leave
-instead: the mile less the clean strip and the road's own clearance, 1493.8 m, and identical
-east and west because the trunks are a mile in from either edge. The middle band has no such
-length, which is why no belt spans it: one end would be on a road and the other wherever the
-meander happened to be at that station.
+Twenty shelterbelts, 50 m across, 22.6 km and 113 ha of hardwood between them - the map
+could carry two hundred, and `SHELTER_MAX_COUNT` keeps the twenty longest, because a belt
+shelters the frontage it runs along and a long one shelters more of it. There is no site
+table: they are derived from what is already on the map, in `build_shelterbelts`, and there
+are two kinds built by one piece of code. Along the three primaries a belt runs on either
+side, `ROADSIDE_SETBACK_M` off the running surface like a yard, cut wherever a field road
+joins, a yard or the town stands, a wood or the lake comes within clearance, or the clean
+strip starts. Between the fields a belt goes wherever two fields face each other across a
+gap of `SHELTER_GAP_MAX_M` or less. On this map nearly every such gap has a tertiary down
+the middle of it (18 m, the road on its axis, 9 m of verge either side), and a belt cannot
+be planted on a road, so where a road runs in the gap the belt stands *beside* it on the
+`SHELTER_ROAD_SIDE` side - west of a north-south road, north of an east-west one, the
+windward side for a north-westerly - with the same setback; where nothing runs in the gap
+it is centred on it. Of the twenty, thirteen are along the primaries, three beside field
+roads and four on bare boundaries. The cap is applied in two passes: every belt the map
+could carry is laid on a scratch copy of the fields, the longest are chosen, and those are
+traced again against each other alone, so a kept belt runs on over the ground a dropped
+one would have taken and no field gives way to a belt that is not there.
 
-They stand on the lines the survey already put there - the half-section lines, where a field
-boundary falls and therefore where a windbreak goes, and the frontage of the roads. Which
-slots are free is not obvious by eye and was not guessed: all fifty (line, section) and
-(band, row) combinations go through the placement rules, and four towns, eighteen yards and
-five woods already stand on this grid. A *row* carries a transversal belt only if it can
-carry one on both flanks of the map, so what lands is whole rows rather than whichever slots
-happened to be left over. The nearest miss on the north-south side is `este_media` section 1,
-where the river's east swing brings the belt to 493 m of open water against the 500 m a
-planting is held off - seven metres, on a rule that could be moved. It is not moved.
+The fields give way to them, and that is the expensive half: a field facing a belt has its
+edge pulled straight back to `SHELTER_CLEAR_M` off the trees - the 15 m the twelve woods
+already on the map keep from the fields beside them - and the corners the cut makes are
+rounded to `FIELD_CORNER_R_M`, the radius the fields were drawn with, so a trimmed field
+reads like every other. It cost 230 ha: 4819 ha of farmland became 4586. What a cut may
+not do is leave a field that is not a field: `FIELD_MIN_HA` and `FIELD_MIN_SIDE_M` are
+floors on what reaches the map, and a belt that would push the field beside it under
+either is not planted on that side - beside a field road it tries the other side, and is
+dropped if that fails too; along a primary it is planted anyway and the field becomes an
+obstacle the belt stops short of. The north row of fields is why: 104 m deep between the
+clean strip and the first field road, a belt on the windward side of that road would have
+left 35 m of it. Crossings are decided by order rather than by a rule: primaries first,
+then the north-south field belts, then the east-west, each later belt stopping
+`SHELTER_JOIN_M` short of the earlier - two belts drawn over the same ground is the
+overlap the old map found the hard way, and `validate()` sweeps every pair for it.
 
 Fourteen stands of riverside timber, 762 ha, cover the valley side down both banks of the
 river and all the way round the lake. They are the one planting here that is not placed on
@@ -632,11 +645,15 @@ centreline instead of the kerb, a yard that is not square or not its stated area
 corner has landed inside the water's valley, one standing on the verge of the class of road
 it is on, one another road runs through, and a farm that has wandered onto a trunk road.
 
-The shelterbelts are `SHELTER_W_M` and `SHELTER_LEAF_TYPE` - the only free numbers in
-them, both lengths coming out of `MILE_M` and a clearance - with `SHELTER_LINES`/`SHELTER_SITES` for the north-south ones
-and `SHELTER_BANDS`/`SHELTER_ROWS`/`SHELTER_EW_SITES` for the transversal. `validate()`
-holds the width and the length against the drawn ring, and holds each belt to the
-orientation its length was derived for.
+The shelterbelts are `SHELTER_W_M` and `SHELTER_LEAF_TYPE`, the clearances
+`SHELTER_CLEAR_M` (fields, yards, woods), `SHELTER_WATER_CLEAR_M` and `SHELTER_JOIN_M`
+(one belt meeting another), `SHELTER_GAP_MAX_M` for what counts as two fields sharing a
+boundary, `SHELTER_MIN_LEN_M` for what is worth drawing, `SHELTER_ROAD_SIDE` for which
+side of a field road they stand on, `SHELTER_MAX_COUNT` for how many stay, and
+`FIELD_CORNER_R_M` for the fillet a trimmed field gets back. There is no site table; move a road or a field and the belts follow. Every
+clearance in that list is measured on the drawn rings by `validate()`, along with the
+width (area over length, so a belt round a bend is held to it too), the floors on every
+field, and no two belts overlapping.
 
 The riverside timber is `GALLERY_SETBACK_M` off the water and `GALLERY_CLEAR_M` off
 everything else, capped at `GALLERY_MAX_W_M` of valley side, with `GALLERY_MIN_W_M` and

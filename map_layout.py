@@ -811,118 +811,849 @@ def wood_area(wid, name, road_id, station, side):
 
 
 # --- the shelterbelts -------------------------------------------------------------
-# Rompevientos: long narrow strips of hardwood along the trunk roads, a hundred metres
-# across and a full section of frontage long.
+# Rompevientos: strips of hardwood SHELTER_W_M across, between the fields and along the
+# primary roads. There is no site table. Where a belt can stand is read off what is
+# already on the map, the same way the riverside timber was: the fields say where the
+# boundaries are, the roads say where the frontage is, and everything else says where a
+# belt has to stop.
 #
-# The length is not a choice. A belt runs from one cross road to the next, held off each
-# end by that road's own clearance, so it is the mile less twice what a section line
-# keeps clear - 1581.3 m - and it lands exactly on the survey the whole map is built on.
-# Picking a round number instead would put the ends of the belts wherever that number
-# happened to fall, and the one thing a shelterbelt is *for* is running the length of the
-# ground it shelters.
+# Two kinds, one piece of code:
 #
-# That also decides which roads can carry one. The section lines are a mile apart, so a
-# mile-long belt fits between two of them exactly - along a trunk road. Across one, on a
-# section line, the same belt would have to fit between the two trunk roads and clear the
-# river's valley, and the widest window that leaves anywhere on the map is 1494 m. So
-# these are trunk-road belts, and `validate()` says so rather than leaving it to whoever
-# adds the next one to rediscover.
-SHELTER_W_M = 100.0
-# What is planted in them, and it is deliberately not what is in the woods. A windbreak
-# on this survey is a row of hardwood - the trees a farmer puts on a field boundary - and
-# the woods are conifer, so the two read apart in both renderers instead of being one
-# undifferentiated green. It is the same tag doing the same job it does on a wood; the
-# value is the only thing that differs.
+#   * **Along a primary**, on both sides: the belt stands ROADSIDE_SETBACK_M off the
+#     running surface, like a yard does, and runs the length of the road. It is cut
+#     wherever something crosses or stands in the way - a field road joining the primary,
+#     a yard, the town, a wood, the lake, the clean strip - and each stretch that is left
+#     is a belt of its own.
+#   * **Between two fields**, wherever two fields face each other across a gap of
+#     SHELTER_GAP_MAX_M or less. On this map nearly every such gap has a field road down
+#     the middle of it (an 18 m gap with a tertiary on its axis and 9 m of verge either
+#     side), and a belt cannot be planted on a road, so where a road runs in the gap the
+#     belt stands *beside* it, on the SHELTER_ROAD_SIDE side, with the same setback as
+#     along a primary. Where nothing runs in the gap the belt is centred on it.
+#
+# The fields then give way. A belt is 50 m across and the gap it stands in is 18, so the
+# field on the far side of it comes back to SHELTER_CLEAR_M off the trees - the same
+# headland the twelve woods already on the map keep from the fields next to them, which
+# is where the number comes from. That is done by cutting the field, not by moving the
+# belt: a field's edge is pulled straight back to the clearance line, and the corners the
+# cut makes are rounded to the FIELD_CORNER_R_M the fields were drawn with, so a trimmed
+# field looks like every other field and not like something with a bite out of it.
+#
+# What a cut may not do is leave a field that is not a field. FIELD_MIN_HA and
+# FIELD_MIN_SIDE_M are the floors: a belt that would push the field beside it under
+# either one is not planted on that side. Along a primary the belt is planted anyway and
+# the field it would ruin is treated as an obstacle instead, so the belt stops short of
+# it; between fields the belt tries the other side of the road first and is dropped if
+# that fails too. The north row of fields is why - 104 m deep between the clean strip
+# and the first field road, and a belt on the windward side of that road would have left
+# 35 m of it.
+#
+# The ends of a belt are not sampled positions. The walk along the line goes in steps of
+# SHELTER_STEP_M, but each run is then extended by bisection to exactly the clearance
+# from whatever stopped it, so a transversal belt meets the north-south belt it runs into
+# at SHELTER_JOIN_M and not at some fraction of a step short of it. Which of the two
+# gives way at a crossing is decided by order: the belts along the primaries are laid
+# first, then the north-south field belts, then the east-west ones, and each later belt
+# stops at the earlier. A transversal belt crossing a north-south one, drawn twice over
+# the same ground, is the overlap case the old map found the hard way.
+SHELTER_W_M = 50.0
+# What is planted in them, and it is deliberately not what is in the woods: a windbreak
+# on a field boundary is a row of hardwood, the woods are conifer, and both renderers
+# colour the two apart.
 SHELTER_LEAF_TYPE = 'broadleaved'
-SHELTER_LEN_M = MILE_M - 2.0 * (ROAD_SECTION['half_width_m'] + ROADSIDE_SETBACK_M)
-
-# The north-south lines a belt may run on. Two kinds, and both of them are lines the
-# survey already put there rather than places a belt looked good:
-#
-#   * the **half-section lines**, half a mile off each trunk road. In this survey that is
-#     where a field boundary falls, and a field boundary is where a windbreak goes - it
-#     shelters the ground on both sides of it instead of one.
-#   * the **frontage** of each trunk road, one setback off the running surface, which is
-#     the other place they stand.
-#
-# The half-section line half a mile *east* of the west trunk road is not here, and cannot
-# be: it lands at x = 2414 and the river's valley reaches x = 2291, so a belt on it would
-# be planted on a valley side. `validate()` would say so; it is listed here because the
-# gap in an otherwise regular series is the kind of thing that gets 'fixed' by someone who
-# has not checked.
-SHELTER_FRONT_M = (ROAD_PRIMARY['half_width_m'] + ROADSIDE_SETBACK_M + SHELTER_W_M / 2.0)
-SHELTER_LINES = {
-    'oeste_media': ROAD_W_X - MILE_M / 2.0,          # 804.7, half a mile west of the trunk
-    'este_media': ROAD_E_X - MILE_M / 2.0,           # 5778.0
-    'este_lejana': ROAD_E_X + MILE_M / 2.0,          # 7387.3
-    'oeste_camino': ROAD_W_X + SHELTER_FRONT_M,      # on the west trunk's east frontage
-    'este_camino': ROAD_E_X - SHELTER_FRONT_M,       # and the east trunk's west frontage
-}
-
-# --- and the same thing turned through ninety degrees -------------------------------
-# A transversal belt cannot take its length from the survey the way a north-south one
-# does: the section lines are a mile apart in y, but in x the only two lines the grid
-# gives are the trunk roads, and they are 4973 m apart. What it takes it from instead is
-# the *band* a trunk road and the map edge leave between them - from the clean strip to
-# the road's own clearance - which is a mile less both of those, 1493.8 m, and comes out
-# identical east and west because the trunks are a mile in from either edge. So the
-# length is still derived and still symmetric; it is just derived from the edge of the
-# map rather than from the next road along.
-#
-# The middle band - between the two trunk roads - has no such length. The river's valley
-# runs down the middle of it and the meanders move, so a belt spanning it would have one
-# end on a road and the other wherever the water happened to be that station. There are
-# none there, and that is why.
-SHELTER_LEN_EW_M = (MILE_M - EDGE_CLEAR_M
-                    - (ROAD_PRIMARY['half_width_m'] + ROADSIDE_SETBACK_M))
-SHELTER_BANDS = {
-    'oeste': (EDGE_CLEAR_M, ROAD_W_X - ROAD_PRIMARY['half_width_m']
-              - ROADSIDE_SETBACK_M),
-    'este': (ROAD_E_X + ROAD_PRIMARY['half_width_m'] + ROADSIDE_SETBACK_M,
-             PLAYABLE_M - EDGE_CLEAR_M),
-}
-# The rows, which mirror `SHELTER_LINES` exactly: the half-section lines in y - the same
-# half-mile offset the north-south belts run on, turned round - and the frontage of each
-# section road, one setback off its running surface.
-SHELTER_FRONT_EW_M = (ROAD_SECTION['half_width_m'] + ROADSIDE_SETBACK_M
-                      + SHELTER_W_M / 2.0)
-SHELTER_ROWS = dict(
-    [(f'media_{k}', PLSS_EW_Y[0] - MILE_M / 2.0 + k * MILE_M)
-     for k in range(len(PLSS_EW_Y))]
-    + [(f'{side}_{k}', y + sgn * SHELTER_FRONT_EW_M)
-       for k, y in enumerate(PLSS_EW_Y) for side, sgn in (('norte', -1), ('sur', +1))]
-)
-
-# A row carries a belt only if it can carry one on *both* sides of the map, so what goes
-# on the ground is whole rows rather than whichever individual slots happened to be left
-# over. Of the thirty (band, row) combinations, three rows come back clear on both
-# flanks. The rest are taken by the four towns, the eighteen yards, the five woods and
-# the five north-south belts - and two of them, `media_1` and `norte_1`, are taken by the
-# north-south belts *crossing* them, which is the case the overlap test used to miss.
-SHELTER_EW_SITES = (
-    ('belt_h1', 'Rompevientos Transversal Oeste 1', 'oeste', 'media_0'),
-    ('belt_h2', 'Rompevientos Transversal Este 1', 'este', 'media_0'),
-    ('belt_h3', 'Rompevientos Transversal Oeste 2', 'oeste', 'sur_3'),
-    ('belt_h4', 'Rompevientos Transversal Este 2', 'este', 'sur_3'),
-    ('belt_h5', 'Rompevientos Transversal Oeste 3', 'oeste', 'media_4'),
-    ('belt_h6', 'Rompevientos Transversal Este 3', 'este', 'media_4'),
-)
+SHELTER_CLEAR_M = 15.0            # to a field, a yard, a wood - what the woods keep now
+SHELTER_WATER_CLEAR_M = 60.0      # to the lake shore, where the fields already stop
+SHELTER_JOIN_M = 1.0              # where one belt runs into another
+SHELTER_GAP_MAX_M = 40.0          # two fields further apart than this do not share a boundary
+SHELTER_MIN_LEN_M = 100.0         # shorter than this is a clump, not a belt
+SHELTER_STEP_M = 5.0              # how finely a line is walked for obstacles
+SHELTER_EDGE_MIN_M = 40.0         # a straight edge shorter than this is a corner fillet
+# Which side of a field road the belt stands on: -1 is west of a north-south road and
+# north of an east-west one, the windward side for the north-westerlies that do the
+# damage on this ground. +1 is the other side, and it is what a belt falls back to when
+# the windward field would go under the floor.
+SHELTER_ROAD_SIDE = -1
+# How many there may be. The map could carry two hundred; twenty is what was asked for,
+# and the twenty that stay are the longest, because a belt shelters the frontage it runs
+# along and a long one shelters more of it. `validate()` holds the cap.
+SHELTER_MAX_COUNT = 20
+# The corner radius the fields were drawn with, fitted to the arcs in the input. A cut
+# corner is rounded back to it so the trimmed fields match the untouched ones.
+FIELD_CORNER_R_M = 9.0
 
 
-def shelter_ring_ew(band, row):
-    """A transversal belt: the whole band, `SHELTER_W_M` about its row."""
-    x0, x1 = SHELTER_BANDS[band]
-    y = SHELTER_ROWS[row]
-    return rect_ring(x0, y - SHELTER_W_M / 2.0, x1, y + SHELTER_W_M / 2.0)
+def simplify_polyline(pts, eps):
+    """Ramer-Douglas-Peucker. A closed ring works too: the first split falls on the
+    vertex farthest from the shared endpoint, and the ring stays closed."""
+    if len(pts) < 3:
+        return list(pts)
+    a, b = pts[0], pts[-1]
+    closed = math.dist(a, b) < 1e-9
+    dmax, idx = -1.0, 0
+    for i in range(1, len(pts) - 1):
+        d = math.dist(pts[i], a) if closed else seg_point_dist(pts[i], a, b)
+        if d > dmax:
+            dmax, idx = d, i
+    if dmax > eps:
+        return (simplify_polyline(pts[:idx + 1], eps)[:-1]
+                + simplify_polyline(pts[idx:], eps))
+    return [a, b]
 
 
-def shelter_area_ew(bid, name, band, row):
-    x0, x1 = SHELTER_BANDS[band]
-    return {'id': bid, 'name': name, 'band': band, 'row': row,
-            'area_ha': SHELTER_W_M * SHELTER_LEN_EW_M / 10000.0,
-            'centre': ((x0 + x1) / 2.0, SHELTER_ROWS[row]),
-            'ring': shelter_ring_ew(band, row),
-            'tags': wood_tags(SHELTER_LEAF_TYPE)}
+def ring_bbox(ring, grow=0.0):
+    xs = [p[0] for p in ring]
+    ys = [p[1] for p in ring]
+    return (min(xs) - grow, min(ys) - grow, max(xs) + grow, max(ys) + grow)
+
+
+def boxes_apart(a, b):
+    return a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1]
+
+
+def seg_seg_dist(a, b, c, d):
+    if segs_cross(a, b, c, d):
+        return 0.0
+    return min(seg_point_dist(a, c, d), seg_point_dist(b, c, d),
+               seg_point_dist(c, a, b), seg_point_dist(d, a, b))
+
+
+def seg_polyline_dist(a, b, pts, stop=0.0, within=None):
+    """Distance from segment ab to a polyline; gives up early once under `stop`. With
+    `within`, a segment of the polyline is only measured if it reaches into that box -
+    the distance comes back as at least `within`'s margin otherwise, which is all a
+    clearance test needs to know."""
+    best = 1e18
+    if within is not None:
+        x0, y0, x1, y1 = within
+        for i in range(len(pts) - 1):
+            c, d = pts[i], pts[i + 1]
+            if (max(c[0], d[0]) < x0 or min(c[0], d[0]) > x1
+                    or max(c[1], d[1]) < y0 or min(c[1], d[1]) > y1):
+                continue
+            dd = seg_seg_dist(a, b, c, d)
+            if dd < best:
+                best = dd
+                if best <= stop:
+                    break
+        return best
+    for i in range(len(pts) - 1):
+        d = seg_seg_dist(a, b, pts[i], pts[i + 1])
+        if d < best:
+            best = d
+            if best <= stop:
+                break
+    return best
+
+
+def seg_ring_dist(a, b, ring, within=None):
+    """0 if the segment enters the ring, else the distance to its boundary."""
+    if point_in_ring(a, ring) or point_in_ring(b, ring):
+        return 0.0
+    return seg_polyline_dist(a, b, ring, within=within)
+
+
+def ring_ring_dist(p, q, stop=0.0):
+    """Distance between two closed rings: 0 if they share any ground."""
+    if any(point_in_ring(v, q) for v in p[:-1]) or any(point_in_ring(v, p) for v in q[:-1]):
+        return 0.0
+    best = 1e18
+    for i in range(len(p) - 1):
+        d = seg_polyline_dist(p[i], p[i + 1], q, stop)
+        if d < best:
+            best = d
+            if best <= stop:
+                break
+    return best
+
+
+def clip_halfplane(poly, q, n):
+    """Sutherland-Hodgman against one half-plane: keep the part of the open polygon
+    `poly` where (p - q) . n >= 0."""
+    out = []
+    if not poly:
+        return out
+    prev = poly[-1]
+    dprev = (prev[0] - q[0]) * n[0] + (prev[1] - q[1]) * n[1]
+    for p in poly:
+        d = (p[0] - q[0]) * n[0] + (p[1] - q[1]) * n[1]
+        if d >= 0.0:
+            if dprev < 0.0:
+                t = dprev / (dprev - d)
+                out.append((prev[0] + t * (p[0] - prev[0]), prev[1] + t * (p[1] - prev[1])))
+            out.append(p)
+        elif dprev >= 0.0:
+            t = dprev / (dprev - d)
+            out.append((prev[0] + t * (p[0] - prev[0]), prev[1] + t * (p[1] - prev[1])))
+        prev, dprev = p, d
+    return out
+
+
+def poly_area_m2(poly):
+    s = 0.0
+    m = len(poly)
+    for i in range(m):
+        x0, y0 = poly[i]
+        x1, y1 = poly[(i + 1) % m]
+        s += x0 * y1 - x1 * y0
+    return abs(s) / 2.0
+
+
+def convex_halfplanes(box):
+    """(point, outward normal) for every edge of a convex ring, whichever way it winds."""
+    pts = box[:-1] if math.dist(box[0], box[-1]) < 1e-9 else list(box)
+    s = 0.0
+    for i in range(len(pts)):
+        x0, y0 = pts[i]
+        x1, y1 = pts[(i + 1) % len(pts)]
+        s += x0 * y1 - x1 * y0
+    sgn = 1.0 if s > 0 else -1.0
+    out = []
+    for i in range(len(pts)):
+        a, b = pts[i], pts[(i + 1) % len(pts)]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        ll = math.hypot(dx, dy) or 1.0
+        out.append((a, (sgn * dy / ll, -sgn * dx / ll)))
+    return out
+
+
+def shrink_convex(box, eps):
+    """The same convex ring pulled in by `eps` on every side."""
+    pts = box[:-1] if math.dist(box[0], box[-1]) < 1e-9 else list(box)
+    poly = list(pts)
+    for q, n in convex_halfplanes(box):
+        poly = clip_halfplane(poly, (q[0] - n[0] * eps, q[1] - n[1] * eps), (-n[0], -n[1]))
+    return poly + [poly[0]] if poly else []
+
+
+def fillet_ring(ring, r, arc_pts=6):
+    """Round every sharp corner of a ring to radius `r`, where both edges are long
+    enough to take the tangent. Vertices along an existing arc turn by too little to be
+    touched, so a ring can go through this twice and come out the same."""
+    pts = ring[:-1] if math.dist(ring[0], ring[-1]) < 1e-9 else list(ring)
+    m = len(pts)
+    out = []
+    for i in range(m):
+        p0, v, p1 = pts[i - 1], pts[i], pts[(i + 1) % m]
+        ux, uy = v[0] - p0[0], v[1] - p0[1]
+        wx, wy = p1[0] - v[0], p1[1] - v[1]
+        lu, lw = math.hypot(ux, uy), math.hypot(wx, wy)
+        if lu < 1e-9 or lw < 1e-9:
+            continue
+        ux, uy, wx, wy = ux / lu, uy / lu, wx / lw, wy / lw
+        theta = math.acos(max(-1.0, min(1.0, -(ux * wx + uy * wy))))   # interior angle
+        turn = math.degrees(math.pi - theta)
+        if turn < 45.0 or turn > 135.0:
+            out.append(v)
+            continue
+        t = r / math.tan(theta / 2.0)
+        if t > lu / 2.0 - 0.5 or t > lw / 2.0 - 0.5:
+            out.append(v)
+            continue
+        s = 1.0 if ux * wy - uy * wx > 0 else -1.0
+        t1 = (v[0] - ux * t, v[1] - uy * t)
+        t2 = (v[0] + wx * t, v[1] + wy * t)
+        cx, cy = t1[0] - uy * r * s, t1[1] + ux * r * s
+        a0 = math.atan2(t1[1] - cy, t1[0] - cx)
+        a1 = math.atan2(t2[1] - cy, t2[0] - cx)
+        sweep = a1 - a0
+        while sweep > math.pi:
+            sweep -= 2 * math.pi
+        while sweep < -math.pi:
+            sweep += 2 * math.pi
+        for j in range(arc_pts + 1):
+            a = a0 + sweep * j / arc_pts
+            out.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return out + [out[0]]
+
+
+# --- obstacles: what a belt has to stop for ---------------------------------------
+class _Obstacles:
+    """Everything a belt is held off, bucketed on a coarse grid so a station only looks
+    at what is near it. Each entry is a ring or an axis with its own clearance."""
+    CELL = 250.0
+
+    def __init__(self):
+        self.items = []
+        self.grid = {}
+
+    def add(self, ring=None, axis=None, clear=0.0, tag=''):
+        pts = ring if ring is not None else axis
+        bbox = ring_bbox(pts, clear + SHELTER_STEP_M)
+        idx = len(self.items)
+        self.items.append({'ring': ring, 'axis': axis, 'clear': clear, 'tag': tag,
+                           'bbox': bbox})
+        c = self.CELL
+        for i in range(int(bbox[0] // c), int(bbox[2] // c) + 1):
+            for j in range(int(bbox[1] // c), int(bbox[3] // c) + 1):
+                self.grid.setdefault((i, j), []).append(idx)
+
+    def blocked(self, a, b, margin, skip=None):
+        """Is the cross-section a-b inside the clean strip and clear of everything, by
+        each thing's own clearance plus `margin`?"""
+        if playable_sdf(*a) > -EDGE_CLEAR_M or playable_sdf(*b) > -EDGE_CLEAR_M:
+            return True
+        sb = (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
+        c = self.CELL
+        seen = set()
+        for i in range(int(sb[0] // c), int(sb[2] // c) + 1):
+            for j in range(int(sb[1] // c), int(sb[3] // c) + 1):
+                for k in self.grid.get((i, j), ()):
+                    if k in seen:
+                        continue
+                    seen.add(k)
+                    o = self.items[k]
+                    if o['tag'] == skip or boxes_apart(sb, o['bbox']):
+                        continue
+                    need = o['clear'] + margin
+                    box = (sb[0] - need, sb[1] - need, sb[2] + need, sb[3] + need)
+                    if o['ring'] is not None:
+                        d = seg_ring_dist(a, b, o['ring'], box)
+                    else:
+                        d = seg_polyline_dist(a, b, o['axis'], need, box)
+                    if d < need:
+                        return True
+        return False
+
+
+def _static_obstacles():
+    obs = _Obstacles()
+    for p in PADS:
+        obs.add(ring=simplify_polyline(p['ring'], 0.05), clear=SHELTER_CLEAR_M, tag=p['id'])
+    for c in CORRIDORS:
+        obs.add(axis=c['axis'], clear=c['half_width_m'] + ROADSIDE_SETBACK_M, tag=c['id'])
+    for w in WATER:
+        if w.get('ring'):
+            obs.add(ring=simplify_polyline(w['ring'], 0.2), clear=SHELTER_WATER_CLEAR_M,
+                    tag=w['id'])
+    for a in AREAS:
+        if a.get('tags', {}).get('natural') == 'wood':
+            obs.add(ring=simplify_polyline(a['ring'], 0.2), clear=SHELTER_CLEAR_M, tag=a['id'])
+    return obs
+
+
+def _runs(flags):
+    runs, start = [], None
+    for i, ok in enumerate(flags):
+        if ok and start is None:
+            start = i
+        elif not ok and start is not None:
+            runs.append((start, i - 1))
+            start = None
+    if start is not None:
+        runs.append((start, len(flags) - 1))
+    return runs
+
+
+def _walk(section, n, obstacles, skip):
+    """Walk a line of `n` stations; `section(s)` gives the cross-section at a station
+    parameter (integers are stations, fractions lie between them). Returns runs as
+    (s0, s1) in that parameter, each end bisected to exactly the clearance."""
+    margin = SHELTER_STEP_M / 2.0
+    flags = [not obstacles.blocked(*section(float(k)), margin, skip) for k in range(n)]
+    out = []
+    for i0, i1 in _runs(flags):
+        s0, s1 = float(i0), float(i1)
+        if i0 > 0:
+            lo, hi = float(i0 - 1), s0          # blocked at lo, clear at hi
+            for _ in range(12):
+                mid = (lo + hi) / 2.0
+                if obstacles.blocked(*section(mid), 0.0, skip):
+                    lo = mid
+                else:
+                    hi = mid
+            s0 = hi
+        if i1 < n - 1:
+            lo, hi = s1, float(i1 + 1)          # clear at lo, blocked at hi
+            for _ in range(12):
+                mid = (lo + hi) / 2.0
+                if obstacles.blocked(*section(mid), 0.0, skip):
+                    hi = mid
+                else:
+                    lo = mid
+            s1 = lo
+        out.append((s0, s1))
+    return out
+
+
+# --- along the primaries ------------------------------------------------------------
+def _dense_with_normals(axis):
+    """The axis densified to SHELTER_STEP_M, with a unit normal at every station and
+    the mitre factor that keeps an offset along that normal a true distance off both
+    adjacent segments: on the bisector at a bend the offset is foreshortened by the
+    cosine of half the turn, and without the factor a belt on the inside of a 20 degree
+    bend sat 13.8 m off a road it was meant to clear by 14."""
+    # Not `densify`: that resamples at a uniform step and drops the bends, and a belt
+    # drawn through the chords of a curve cuts inside its own offset at every one.
+    dense = [axis[0]]
+    for i in range(len(axis) - 1):
+        a, b = axis[i], axis[i + 1]
+        k = max(1, int(math.ceil(math.dist(a, b) / SHELTER_STEP_M)))
+        dense += [(a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k)
+                  for j in range(1, k + 1)]
+    dense = [q for i, q in enumerate(dense) if i == 0 or math.dist(q, dense[i - 1]) > 1e-9]
+    n = len(dense)
+    seg = []                                   # unit normal of each segment
+    for i in range(n - 1):
+        dx, dy = dense[i + 1][0] - dense[i][0], dense[i + 1][1] - dense[i][1]
+        ll = math.hypot(dx, dy) or 1.0
+        seg.append((-dy / ll, dx / ll))
+    normals, mitre = [], []
+    for i in range(n):
+        # The bisector of the two segment normals, not the normal of the chord between
+        # the neighbours: those agree only when the two segments are the same length,
+        # and on a curve drawn with short segments they are not.
+        p, q = seg[max(0, i - 1)], seg[min(n - 2, i)]
+        nx, ny = p[0] + q[0], p[1] + q[1]
+        ll = math.hypot(nx, ny) or 1.0
+        nv = (nx / ll, ny / ll)
+        normals.append(nv)
+        cos_half = abs(nv[0] * q[0] + nv[1] * q[1])
+        mitre.append(1.0 / max(cos_half, 0.5))
+    return dense, normals, mitre
+
+
+def _at(dense, normals, mitre, s):
+    """Point, normal and mitre factor at fractional station `s`."""
+    i = int(s)
+    if i >= len(dense) - 1:
+        return dense[-1], normals[-1], mitre[-1]
+    f = s - i
+    p, q = dense[i], dense[i + 1]
+    n0, n1 = normals[i], normals[i + 1]
+    nx, ny = n0[0] + f * (n1[0] - n0[0]), n0[1] + f * (n1[1] - n0[1])
+    ll = math.hypot(nx, ny) or 1.0
+    return ((p[0] + f * (q[0] - p[0]), p[1] + f * (q[1] - p[1])), (nx / ll, ny / ll),
+            mitre[i] + f * (mitre[i + 1] - mitre[i]))
+
+
+def _primary_belt_runs(road, side, obstacles):
+    """The stretches along one side of a primary a belt can stand on, as rings."""
+    inner = road['half_width_m'] + ROADSIDE_SETBACK_M
+    outer = inner + SHELTER_W_M
+    dense, normals, mitre = _dense_with_normals(road['axis'])
+
+    def at(s, d):
+        p, nv, m = _at(dense, normals, mitre, s)
+        return (p[0] + side * nv[0] * d * m, p[1] + side * nv[1] * d * m)
+
+    def section(s):
+        return at(s, inner), at(s, outer)
+
+    # The ring is drawn through the very sections the walk tested, so what was measured
+    # clear is what is drawn: an offset built afresh from the run's own polyline takes
+    # its end normals one-sided and lands up to a metre off the section at a bend.
+    out = []
+    for s0, s1 in _walk(section, len(dense), obstacles, road['id']):
+        stations = [s0] + [float(k) for k in range(int(math.ceil(s0)), int(s1) + 1)
+                           if s0 + 1e-9 < k < s1 - 1e-9] + [s1]
+        axis = simplify_polyline([at(s, inner + SHELTER_W_M / 2.0) for s in stations], 0.02)
+        if polyline_length(axis) < SHELTER_MIN_LEN_M:
+            continue
+        lo = [at(s, inner) for s in stations]
+        hi = [at(s, outer) for s in stations]
+        out.append({'ring': simplify_polyline(close_ring(lo + hi[::-1]), 0.02), 'axis': axis,
+                    'road': road['id'], 'side': side, 'inner': inner,
+                    'road_axis': simplify_polyline(
+                        [_at(dense, normals, mitre, s)[0] for s in stations], 0.02)})
+    return out
+
+
+# --- between the fields -------------------------------------------------------------
+def _field_edges(field):
+    """(orient, coord, lo, hi, side) for every long axis-aligned edge of a field, with
+    `side` +1 if the field lies on the greater-coordinate side of it (east or south)."""
+    s = simplify_polyline(field['ring'], 0.5)
+    out = []
+    for i in range(len(s) - 1):
+        a, b = s[i], s[i + 1]
+        if abs(a[0] - b[0]) < 0.5 and abs(a[1] - b[1]) >= SHELTER_EDGE_MIN_M:
+            x = (a[0] + b[0]) / 2.0
+            lo, hi = sorted((a[1], b[1]))
+            side = 1 if point_in_ring((x + 1.0, (lo + hi) / 2.0), field['ring']) else -1
+            out.append(('v', x, lo, hi, side))
+        elif abs(a[1] - b[1]) < 0.5 and abs(a[0] - b[0]) >= SHELTER_EDGE_MIN_M:
+            y = (a[1] + b[1]) / 2.0
+            lo, hi = sorted((a[0], b[0]))
+            side = 1 if point_in_ring(((lo + hi) / 2.0, y + 1.0), field['ring']) else -1
+            out.append(('h', y, lo, hi, side))
+    return out
+
+
+def _road_in_gap(o, mid, lo, hi, half_gap):
+    """The corridor running down this gap, if one does: on the midline at both ends
+    and the middle of the stretch."""
+    for c in CORRIDORS:
+        for s in (lo, (lo + hi) / 2.0, hi):
+            p = (mid, s) if o == 'v' else (s, mid)
+            if dist_to_polyline(p, c['axis']) > half_gap:
+                break
+        else:
+            return c
+    return None
+
+
+def _boundary_lines(fields):
+    """Every stretch of ground two fields face each other across, merged along each
+    line: (orient, gap midline, lo, hi, host road or None). Where a road runs in the
+    gap the belt will stand beside it; the line carries the road so the caller can."""
+    edges = []
+    for f in fields:
+        edges += _field_edges(f)
+    lines = []
+    for o in ('v', 'h'):
+        near = [e for e in edges if e[0] == o and e[4] == -1]     # field on the low side
+        far = sorted((e for e in edges if e[0] == o and e[4] == +1), key=lambda e: e[1])
+        cands = []
+        for e in near:
+            for f in far:
+                gap = f[1] - e[1]
+                if gap <= 0.0 or gap > SHELTER_GAP_MAX_M:
+                    continue
+                lo, hi = max(e[2], f[2]), min(e[3], f[3])
+                if hi - lo < 1.0:
+                    continue
+                mid = (e[1] + f[1]) / 2.0
+                road = _road_in_gap(o, mid, lo, hi, gap / 2.0)
+                cands.append((mid, lo, hi, None if road is None else road['id']))
+        cands.sort(key=lambda c: (c[0], c[1]))
+        i = 0
+        while i < len(cands):
+            j = i
+            while j + 1 < len(cands) and cands[j + 1][0] - cands[i][0] <= 2.0:
+                j += 1
+            group = cands[i:j + 1]
+            mid = sum(g[0] for g in group) / len(group)
+            cur = None
+            for lo, hi, rid in sorted((g[1], g[2], g[3]) for g in group):
+                if cur is not None and lo <= cur[1] + SHELTER_GAP_MAX_M and rid == cur[2]:
+                    cur[1] = max(cur[1], hi)
+                else:
+                    if cur is not None:
+                        lines.append((o, mid, cur[0], cur[1], cur[2]))
+                    cur = [lo, hi, rid]
+            lines.append((o, mid, cur[0], cur[1], cur[2]))
+            i = j + 1
+    return lines
+
+
+def _field_belt_runs(o, coord, lo, hi, host, obstacles):
+    """The stretches of one boundary line a belt can stand on, as rings."""
+    half = SHELTER_W_M / 2.0
+    n = max(2, int(math.ceil((hi - lo) / SHELTER_STEP_M)) + 1)
+
+    def station(s):
+        return lo + (hi - lo) * s / (n - 1)
+
+    def section(s):
+        at = station(s)
+        return ((coord - half, at), (coord + half, at)) if o == 'v' \
+            else ((at, coord - half), (at, coord + half))
+
+    out = []
+    for s0, s1 in _walk(section, n, obstacles, host):
+        a0, a1 = station(s0), station(s1)
+        if a1 - a0 < SHELTER_MIN_LEN_M:
+            continue
+        if o == 'v':
+            ring, axis = rect_ring(coord - half, a0, coord + half, a1), [(coord, a0), (coord, a1)]
+        else:
+            ring, axis = rect_ring(a0, coord - half, a1, coord + half), [(a0, coord), (a1, coord)]
+        out.append({'ring': ring, 'axis': axis, 'road': host, 'side': 0, 'inner': None})
+    return out
+
+
+# --- trimming the fields back -------------------------------------------------------
+def _belt_boxes(belt, clear):
+    """The convex boxes a field has to stay out of for this belt, grown by `clear`:
+    one for a straight belt, one per straight stretch of a belt along a bend."""
+    if belt['side'] == 0:
+        return [rect_ring(*ring_bbox(belt['ring'], clear))]
+    ax, inner, side = belt['road_axis'], belt['inner'], belt['side']
+    d0, d1 = inner - clear, inner + SHELTER_W_M + clear
+    reach = clear + SHELTER_W_M          # room for the mitre at a bend
+    boxes = []
+    for i in range(len(ax) - 1):
+        a, b = ax[i], ax[i + 1]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        ll = math.hypot(dx, dy) or 1.0
+        ux, uy = dx / ll, dy / ll
+        nx, ny = -uy * side, ux * side
+        p0 = (a[0] - ux * reach, a[1] - uy * reach)
+        p1 = (b[0] + ux * reach, b[1] + uy * reach)
+        boxes.append([(p0[0] + nx * d0, p0[1] + ny * d0), (p1[0] + nx * d0, p1[1] + ny * d0),
+                      (p1[0] + nx * d1, p1[1] + ny * d1), (p0[0] + nx * d1, p0[1] + ny * d1),
+                      (p0[0] + nx * d0, p0[1] + ny * d0)])
+    return boxes
+
+
+def _clear_of(poly, box_shrunk):
+    return not poly or not box_shrunk or not rings_overlap(poly + [poly[0]], box_shrunk)
+
+
+def _trim_poly(poly, box):
+    """Cut the least off an open polygon that keeps it out of a convex box: one
+    half-plane of the box if one will do, two if not. None if nothing is left."""
+    shrunk = shrink_convex(box, 0.01)
+    if _clear_of(poly, shrunk):
+        return poly, False
+    hps = convex_halfplanes(box)
+    best = None
+    for q, n in hps:
+        cand = clip_halfplane(poly, q, n)
+        if len(cand) >= 3 and _clear_of(cand, shrunk):
+            a = poly_area_m2(cand)
+            if best is None or a > best[0]:
+                best = (a, cand)
+    if best is None:
+        for i in range(len(hps)):
+            for j in range(i + 1, len(hps)):
+                cand = clip_halfplane(clip_halfplane(poly, *hps[i]), *hps[j])
+                if len(cand) >= 3 and _clear_of(cand, shrunk):
+                    a = poly_area_m2(cand)
+                    if best is None or a > best[0]:
+                        best = (a, cand)
+    return (None, True) if best is None else (best[1], True)
+
+
+def _trim_ring(ring, belts, clear):
+    """A field ring held `clear` off every belt in `belts`: (ring, touched)."""
+    poly = ring[:-1]
+    fb = ring_bbox(ring)
+    touched = False
+    for belt in belts:
+        if boxes_apart(fb, ring_bbox(belt['ring'], clear + 0.1)):
+            continue
+        for box in _belt_boxes(belt, clear):
+            if boxes_apart(ring_bbox(poly), ring_bbox(box)):
+                continue
+            poly, cut = _trim_poly(poly, box)
+            touched = touched or cut
+            if poly is None:
+                return None, True
+    if not touched:
+        return ring, False
+    return fillet_ring(simplify_polyline(poly + [poly[0]], 0.05), FIELD_CORNER_R_M), True
+
+
+def field_floors_ok(ring):
+    """Is this still a field? Judged on what reaches the map - the ring clipped to the
+    clean strip - against FIELD_MIN_HA and FIELD_MIN_SIDE_M."""
+    if ring is None:
+        return False
+    m = EDGE_CLEAR_M
+    r = clip_ring_to_rect(ring, m, m, PLAYABLE_M - m, PLAYABLE_M - m)
+    if len(r) < 4 or ring_area_ha(r) < FIELD_MIN_HA:
+        return False
+    x0, y0, x1, y1 = ring_bbox(r)
+    return min(x1 - x0, y1 - y0) >= FIELD_MIN_SIDE_M
+
+
+def _trim_fields(fields, belts, commit):
+    """Trim every field off `belts`. With `commit` the rings are replaced; without it
+    the fields that would go under the floors are returned instead."""
+    failed = []
+    if not belts:
+        return failed
+    reach = [ring_bbox(b['ring'], SHELTER_CLEAR_M + 0.1) for b in belts]
+    near = (min(r[0] for r in reach), min(r[1] for r in reach),
+            max(r[2] for r in reach), max(r[3] for r in reach))
+    for f in fields:
+        if boxes_apart(near, ring_bbox(f['ring'])):
+            continue
+        ring, touched = _trim_ring(f['ring'], belts, SHELTER_CLEAR_M)
+        if not touched:
+            continue
+        if not field_floors_ok(ring):
+            failed.append(f)
+            continue
+        if commit:
+            f['ring'] = ring
+    return failed
+
+
+def _lay_candidates(fields, obstacles, lay):
+    """Every belt the map could carry, laid in order onto `obstacles` through `lay`.
+
+    Order is the whole of the crossing rule: primaries first, then the north-south
+    field belts, then the east-west, each stopping at what came before. The fields are
+    trimmed as it goes, so a later belt is judged against the ground the earlier ones
+    left; pass a scratch copy of the fields to keep that from reaching the map.
+    """
+    # Along the primaries, both sides. A field the belt would ruin becomes an obstacle
+    # and the belt is laid again around it.
+    for road in [c for c in CORRIDORS if c['kind'] == 'primary']:
+        for side in (-1, +1):
+            source = ('primary', road['id'], side)
+            for _ in range(4):
+                runs = _primary_belt_runs(road, side, obstacles)
+                failed = _trim_fields(fields, runs, commit=False)
+                if not failed:
+                    break
+                for f in failed:
+                    obstacles.add(ring=simplify_polyline(f['ring'], 0.05),
+                                  clear=SHELTER_CLEAR_M, tag=f['id'])
+            _trim_fields(fields, runs, commit=True)
+            lay(runs, source)
+
+    # Between the fields: north-south lines first, then east-west. Beside a road the
+    # windward side is tried first, the other side if the windward field would go under
+    # the floor, and the line is left alone if neither will do.
+    lines = _boundary_lines(fields)
+    for orient in ('v', 'h'):
+        for o, mid, lo, hi, host in sorted(l for l in lines if l[0] == orient):
+            if host is None:
+                choices = [mid]
+            else:
+                road = corridor_by_id(host)
+                at = sum(p[0] if o == 'v' else p[1] for p in road['axis']) / len(road['axis'])
+                off = road['half_width_m'] + ROADSIDE_SETBACK_M + SHELTER_W_M / 2.0
+                choices = [at + SHELTER_ROAD_SIDE * off, at - SHELTER_ROAD_SIDE * off]
+            for coord in choices:
+                runs = _field_belt_runs(o, coord, lo, hi, host, obstacles)
+                if not runs:
+                    continue
+                if _trim_fields(fields, runs, commit=False):
+                    continue
+                _trim_fields(fields, runs, commit=True)
+                lay(runs, ('field', o, coord, lo, hi, host))
+                break
+
+
+def _runs_from(source, obstacles):
+    if source[0] == 'primary':
+        return _primary_belt_runs(corridor_by_id(source[1]), source[2], obstacles)
+    return _field_belt_runs(*source[1:], obstacles)
+
+
+def build_shelterbelts(fields):
+    """The shelterbelts on the map, as `AREAS` records - and the fields cut back to
+    make room for them, in place.
+
+    Two passes. The first lays every belt the map could carry on a scratch copy of the
+    fields, which is the only way to know what there is to choose from; the
+    SHELTER_MAX_COUNT longest are kept, longest first because a belt shelters the
+    frontage it runs along and nothing else. The second pass lays only those, in the
+    original order, so each is traced again against the belts actually kept rather
+    than stopping short of one that was dropped - and only then are the real fields
+    cut, so no field gives ground to a belt that is not there.
+    """
+    scratch = [{'id': f['id'], 'name': f['name'], 'ring': f['ring']} for f in fields]
+    cands = []
+
+    def note(runs, source):
+        for r in runs:
+            obstacles.add(ring=r['ring'], clear=SHELTER_JOIN_M, tag='belt')
+            cands.append((len(cands), source, r))
+
+    obstacles = _static_obstacles()
+    _lay_candidates(scratch, obstacles, note)
+    keep = sorted(cands, key=lambda c: -polyline_length(c[2]['axis']))[:SHELTER_MAX_COUNT]
+    keep.sort(key=lambda c: c[0])
+
+    obstacles = _static_obstacles()
+    belts = []
+    for _, source, was in keep:
+        centre = was['axis'][len(was['axis']) // 2]
+        run = None
+        for _ in range(4):
+            runs = _runs_from(source, obstacles)
+            if not runs:
+                break
+            run = min(runs, key=lambda r: dist_to_polyline(centre, r['axis']))
+            failed = _trim_fields(fields, [run], commit=False)
+            if not failed:
+                break
+            for f in failed:
+                obstacles.add(ring=simplify_polyline(f['ring'], 0.05),
+                              clear=SHELTER_CLEAR_M, tag=f['id'])
+        if run is None:
+            continue
+        _trim_fields(fields, [run], commit=True)
+        obstacles.add(ring=run['ring'], clear=SHELTER_JOIN_M, tag='belt')
+        belts.append(run)
+
+    out = []
+    for k, b in enumerate(belts):
+        out.append({'id': f'belt_{k + 1:03d}', 'kind': 'shelterbelt',
+                    'name': f'Rompevientos {k + 1:03d}', 'ring': b['ring'],
+                    'axis': b['axis'], 'road': b['road'], 'side': b['side'],
+                    'area_ha': ring_area_ha(b['ring']), 'tags': wood_tags(SHELTER_LEAF_TYPE)})
+    return out
+
+
+def _validate_shelterbelts(bad):
+    """Every rule a belt has to meet, measured on the drawn rings."""
+    belts = [a for a in AREAS if a.get('kind') == 'shelterbelt']
+    if not belts:
+        return
+    if len(belts) > SHELTER_MAX_COUNT:
+        bad.append(f"{len(belts)} shelterbelts, over the cap of {SHELTER_MAX_COUNT}")
+    fields = [a for a in AREAS if a.get('kind') == 'farmland']
+    woods = [a for a in AREAS if a.get('kind') == 'wood']
+    tol = 0.05
+    for b in belts:
+        ring = b['ring']
+        if len(ring) < 4 or math.dist(ring[0], ring[-1]) > 1e-6:
+            bad.append(f"{b['id']}: ring does not close on its first point")
+            continue
+        if not ring_is_simple(ring):
+            bad.append(f"{b['id']}: ring crosses itself")
+        if b['tags'] != wood_tags(SHELTER_LEAF_TYPE):
+            bad.append(f"{b['id']}: tagged {b['tags']}, not a {SHELTER_LEAF_TYPE} wood")
+        if max(playable_sdf(x, y) for x, y in ring) > -EDGE_CLEAR_M + tol:
+            bad.append(f"{b['id']}: inside the {EDGE_CLEAR_M:.0f} m clean strip")
+        length = polyline_length(b['axis'])
+        if length < SHELTER_MIN_LEN_M - tol:
+            bad.append(f"{b['id']}: {length:.0f} m long, under {SHELTER_MIN_LEN_M:.0f}")
+        width = ring_area_ha(ring) * 10000.0 / length if length else 0.0
+        if abs(width - SHELTER_W_M) > 0.5:
+            bad.append(f"{b['id']}: {width:.1f} m across, not {SHELTER_W_M:.0f}")
+        bb = ring_bbox(ring, SHELTER_WATER_CLEAR_M + 1.0)
+        for f in fields:
+            if boxes_apart(bb, ring_bbox(f['ring'])):
+                continue
+            d = ring_ring_dist(ring, f['ring'], SHELTER_CLEAR_M)
+            if d < SHELTER_CLEAR_M - tol:
+                bad.append(f"{b['id']}: {d:.1f} m from field {f['name']}, "
+                           f"under {SHELTER_CLEAR_M:.0f}")
+        for p in PADS:
+            if boxes_apart(bb, ring_bbox(p['ring'])):
+                continue
+            d = ring_ring_dist(ring, p['ring'], SHELTER_CLEAR_M)
+            if d < SHELTER_CLEAR_M - tol:
+                bad.append(f"{b['id']}: {d:.1f} m from {p['name']}, under {SHELTER_CLEAR_M:.0f}")
+        for w in woods:
+            if boxes_apart(bb, ring_bbox(w['ring'])):
+                continue
+            d = ring_ring_dist(ring, w['ring'], SHELTER_CLEAR_M)
+            if d < SHELTER_CLEAR_M - tol:
+                bad.append(f"{b['id']}: {d:.1f} m from wood {w['name']}, under {SHELTER_CLEAR_M:.0f}")
+        for w in WATER:
+            if not w.get('ring') or boxes_apart(bb, ring_bbox(w['ring'])):
+                continue
+            d = ring_ring_dist(ring, w['ring'], SHELTER_WATER_CLEAR_M)
+            if d < SHELTER_WATER_CLEAR_M - tol:
+                bad.append(f"{b['id']}: {d:.1f} m from {w['name']}, under {SHELTER_WATER_CLEAR_M:.0f}")
+        for c in CORRIDORS:
+            need = c['half_width_m'] + ROADSIDE_SETBACK_M
+            if boxes_apart(bb, ring_bbox(c['axis'])):
+                continue
+            d = min(seg_polyline_dist(ring[i], ring[i + 1], c['axis'], need)
+                    for i in range(len(ring) - 1))
+            if d < need - tol:
+                bad.append(f"{b['id']}: {d:.1f} m from {c['name']}, under {need:.1f}")
+    for i in range(len(belts)):
+        for j in range(i + 1, len(belts)):
+            if boxes_apart(ring_bbox(belts[i]['ring']), ring_bbox(belts[j]['ring'])):
+                continue
+            if rings_overlap(belts[i]['ring'], belts[j]['ring']):
+                bad.append(f"{belts[i]['id']} and {belts[j]['id']} overlap")
+    for f in fields:
+        if not ring_is_simple(f['ring']):
+            bad.append(f"{f['id']}: field ring crosses itself")
+        if not field_floors_ok(f['ring']):
+            bad.append(f"{f['id']}: under {FIELD_MIN_HA:.0f} ha or {FIELD_MIN_SIDE_M:.0f} m "
+                       f"across after trimming")
 
 
 # --- the timber along the water ----------------------------------------------------
@@ -1879,48 +2610,6 @@ def build_fields(planted):
             for n, r in enumerate(rects)]
 
 
-# (id, name, line, which section it covers). The section index `k` is the stretch between
-# `PLSS_EW_Y[k]` and `PLSS_EW_Y[k + 1]`, so a belt is named by the ground it covers rather
-# than by a station someone measured off a ruler.
-#
-# There are five and not six because five is what fits. Every one of the twenty
-# (line, section) slots was put through the placement rules: four towns, eighteen yards
-# and five woods already stand on this grid, and what they leave is these five. The
-# nearest miss is `este_media` section 1, where the river's east swing brings the belt to
-# 493 m of open water against the 500 m a planting is held off - seven metres, on a rule
-# that could be moved. It is not moved. The clearance is what decides whether a belt
-# stands on the floodplain or on the valley side, and a rule that gives way the first
-# time a feature wants it to is not deciding anything.
-SHELTER_SITES = (
-    ('belt_1', 'Rompevientos Oeste 1', 'oeste_media', 0),
-    ('belt_2', 'Rompevientos Oeste 2', 'oeste_camino', 2),
-    ('belt_3', 'Rompevientos Este 1', 'este_media', 2),
-    ('belt_4', 'Rompevientos Este 2', 'este_camino', 1),
-    ('belt_5', 'Rompevientos Este 3', 'este_lejana', 0),
-)
-
-
-def shelter_ring(line, gap):
-    """The belt's outline: `SHELTER_W_M` about its line, ending on the two cross roads.
-
-    Both ends are a clearance rather than a number - one section line's at each - so the
-    belt is the section, and moving the setback moves both together.
-    """
-    x = SHELTER_LINES[line]
-    end = ROAD_SECTION['half_width_m'] + ROADSIDE_SETBACK_M
-    return rect_ring(x - SHELTER_W_M / 2.0, PLSS_EW_Y[gap] + end,
-                     x + SHELTER_W_M / 2.0, PLSS_EW_Y[gap + 1] - end)
-
-
-def shelter_area(bid, name, line, gap):
-    ring = shelter_ring(line, gap)
-    return {'id': bid, 'name': name, 'line': line, 'gap': gap,
-            'area_ha': SHELTER_W_M * SHELTER_LEN_M / 10000.0,
-            'centre': (SHELTER_LINES[line],
-                       (PLSS_EW_Y[gap] + PLSS_EW_Y[gap + 1]) / 2.0), 'ring': ring,
-            'tags': wood_tags(SHELTER_LEAF_TYPE)}
-
-
 # --- the OSM vocabulary -----------------------------------------------------------
 # Exactly what `osm_generator/visualize_osm.py` and `visualizer/create_3d_viewer.py` know
 # how to draw. A way tagged with anything else is dropped by both renderers without a
@@ -2431,6 +3120,14 @@ if os.path.exists(_INPUT_OSM):
             })
 
 
+# The shelterbelts are the one thing here that is derived from the input rather than
+# read out of it: where they stand is decided by the fields and the roads above, and
+# the fields are cut back to make room for them. `SHELTERBELTS` is the list on its own;
+# they are also in `AREAS`, which is what the OSM draws.
+SHELTERBELTS = build_shelterbelts(FIELDS) if FIELDS else []
+AREAS.extend(SHELTERBELTS)
+
+
 def corridors():
     return list(CORRIDORS)
 
@@ -2532,6 +3229,7 @@ def validate():
                 bad.append(f"{a['id']}: point ({x:.1f}, {y:.1f}) outside playable bounds")
                 break
 
+    _validate_shelterbelts(bad)
     return bad
 
 
@@ -2541,11 +3239,13 @@ def summary():
         return (f"{PLAYABLE_M:.0f} m playable on a {CANVAS_M:.0f} m canvas, no features "
                 f"yet, flat at {BASE_ELEV_M:.0f} m inside a valley rim rising to "
                 f"{RIM_CREST_M:.0f} m")
-    woods = [a for a in AREAS if a.get('kind') == 'wood' or a.get('tags', {}).get('natural') == 'wood']
+    woods = [a for a in AREAS if a.get('kind') == 'wood']
+    belts = [a for a in AREAS if a.get('kind') == 'shelterbelt']
     water_str = f", {len(WATER)} water body" if len(WATER) == 1 else (f", {len(WATER)} water bodies" if len(WATER) > 1 else "")
     return (f"{PLAYABLE_M:.0f} m playable on a {CANVAS_M:.0f} m canvas, "
             f"{len(CORRIDORS)} roads, {len(PADS)} farmyards, {len(FIELDS)} fields, "
-            f"{len(woods)} woods{water_str}, datum {BASE_ELEV_M:.1f} m, "
+            f"{len(woods)} woods, {len(belts)} shelterbelts{water_str}, "
+            f"datum {BASE_ELEV_M:.1f} m, "
             f"rim to {RIM_CREST_M:.0f} m")
 
 
