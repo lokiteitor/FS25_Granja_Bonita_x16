@@ -77,8 +77,16 @@ EXTEND_M = 300.0
 EDGE_MIN = -OFFSET_M - EXTEND_M               # -2348
 EDGE_MAX = PLAYABLE_M + OFFSET_M + EXTEND_M   # 10540
 
-# A clean strip inside the playable boundary.
-EDGE_CLEAR_M = 0.0
+# A clean strip inside the playable boundary: nothing planted or parcelled stands in it.
+# Everything the OSM draws as a ring - field, wood, yard, town block - is clipped back to
+# it by `generate_osm.strip_ring`, and `check_osm` fails the build if any of them reaches
+# in. Clipped and not clamped: clamping folds whatever hangs over onto the boundary
+# itself, which is how a strip of timber once ended up with a run of nodes lying across
+# the river channel.
+#
+# The roads and the water are the two exemptions, and neither is a loophole: a road that
+# stopped 15 m short of the edge would end in mid-air, and a river has to leave the map.
+EDGE_CLEAR_M = 50.0
 
 # --- the datum --------------------------------------------------------------------
 BASE_ELEV_M = 46.4
@@ -2303,6 +2311,18 @@ if os.path.exists(_INPUT_OSM):
         lat, lon = _nodes[nid]
         return ((lon - _minlon) * _m_lon, (_maxlat - lat) * _m_lat)
 
+
+    def _strip_extent(pts):
+        """The extent of a ring, held inside the clean strip.
+
+        A pad is a rectangle to the DEM, so it is the extent and not the ring that has
+        to respect the strip."""
+        lo, hi = EDGE_CLEAR_M, PLAYABLE_M - EDGE_CLEAR_M
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        return ((min(max(min(xs), lo), hi), min(max(max(xs), lo), hi)),
+                (min(max(min(ys), lo), hi), min(max(max(ys), lo), hi)))
+
     _TOWN_RESERVOIR_WAYS = {2, 4, 9, 14, 15, 16, 17, 18, 282, 337, 338}
 
     for _w in _root.findall('way'):
@@ -2361,15 +2381,14 @@ if os.path.exists(_INPUT_OSM):
             # drew itself would put a second footprint over every block in the grid.
             # One platform for the whole town rather than one per block, so the streets
             # between them come out flat and continuous instead of stepping at a kerb.
-            _xs = [p[0] for p in _pts]
-            _ys = [p[1] for p in _pts]
-            _cx, _cy = (min(_xs) + max(_xs)) / 2.0, (min(_ys) + max(_ys)) / 2.0
+            _xs, _ys = _strip_extent(_pts)
+            _cx, _cy = (_xs[0] + _xs[1]) / 2.0, (_ys[0] + _ys[1]) / 2.0
             PADS.append({
                 'id': f'town_pad_{_wid}',
                 'kind': 'town',
                 'name': _name,
                 'centre': (_cx, _cy),
-                'size': (max(_xs) - min(_xs), max(_ys) - min(_ys)),
+                'size': (_xs[1] - _xs[0], _ys[1] - _ys[0]),
                 'ring': _pts,
                 'feather_m': TOWN_PAD_FEATHER_M,
                 'drain_grade': TOWN_DRAIN_GRADE,
@@ -2382,10 +2401,15 @@ if os.path.exists(_INPUT_OSM):
             # an attribute no renderer reads is the one thing not worth emitting - and
             # `check_osm` would be right to ask what draws it.
             _level = _tags.pop('m4fs:level', None) == 'yes'
-            _xs = [p[0] for p in _pts]
-            _ys = [p[1] for p in _pts]
-            _cx, _cy = (min(_xs) + max(_xs)) / 2.0, (min(_ys) + max(_ys)) / 2.0
-            _w_size, _h_size = max(_xs) - min(_xs), max(_ys) - min(_ys)
+            # The platform stops at the clean strip like everything else. The ring the
+            # OSM draws is clipped to it, and a pad that went on grading to the boundary
+            # would leave the strip clear in the vectors and levelled in the ground -
+            # which is the disagreement between the two halves this module exists to
+            # prevent. The feather still runs outwards past the platform edge, because a
+            # platform has to come down to the ground it stands in somewhere.
+            _xs, _ys = _strip_extent(_pts)
+            _cx, _cy = (_xs[0] + _xs[1]) / 2.0, (_ys[0] + _ys[1]) / 2.0
+            _w_size, _h_size = _xs[1] - _xs[0], _ys[1] - _ys[0]
             PADS.append({
                 'id': f'yard_pad_{_wid}',
                 'kind': 'farmyard',
