@@ -773,6 +773,28 @@ def draw_figures(raw, out_vis, out_detail):
 
 
 # ==================================================================================
+def clean_town_and_reservoir_area(valle_play):
+    """Cleans and restores the region previously occupied by the town and water reservoir
+    (x in [6930, 8192], y in [0, 2400]). Removes all artificial flattening, reservoir depressions,
+    and filter seams, providing a smooth natural continuation of the landscape and clean
+    transition to the mountain.
+    """
+    out = valle_play.copy()
+    ref_col = valle_play[0:2400, 6930].copy()
+
+    # 1. Natural continuation of the plain and gentle slope across x in [6930, 8192]
+    out[0:2260, 6930:8192] = ref_col[0:2260, None]
+
+    # 2. Smooth blend into the natural mountain foot for y in [2260, 2400]
+    for y in range(2260, 2400):
+        t = (y - 2260) / (2400 - 2260)
+        w = t * t * (3.0 - 2.0 * t)
+        orig = np.maximum(ref_col[y], valle_play[y, 6930:8192])
+        out[y, 6930:8192] = (1.0 - w) * ref_col[y] + w * orig
+
+    return out
+
+
 def main():
     t_start = time.time()
     print(f"=== FS25 DEM generator ({CANVAS_M}x{CANVAS_M} m canvas, "
@@ -816,15 +838,9 @@ def main():
         valle = np.array(Image.open(input_dem))
         valle_play = valle[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M].astype(np.float32) / 100.0
 
-        # Clean town and reservoir area (x in [7020, 8192], y in [985, 2280])
+        # Clean town and reservoir area (x in [6850, 8192], y in [800, 2500])
         print("   Cleaning town area and water reservoir in DEM...")
-        toe_heights = valle_play[2280, 7020:8192].copy()
-        for y in range(985, 2150):
-            valle_play[y, 7020:8192] = 35.00
-        for y in range(2150, 2280):
-            t = (y - 2150) / (2280 - 2150)
-            w = t * t * (3.0 - 2.0 * t)
-            valle_play[y, 7020:8192] = (1.0 - w) * 35.00 + w * toe_heights
+        valle_play = clean_town_and_reservoir_area(valle_play)
 
         raw[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M] = np.rint(valle_play * 100.0).astype(np.uint16)
 
