@@ -2373,8 +2373,15 @@ if os.path.exists(_INPUT_OSM):
                 'ring': _pts,
                 'feather_m': TOWN_PAD_FEATHER_M,
                 'drain_grade': TOWN_DRAIN_GRADE,
+                'level': True,
             })
         elif _tags.get('landuse') == 'farmyard':
+            # `m4fs:level` is a build directive and not map data: it says this yard's
+            # ground was graded, which is a fact about the terrain and not about the
+            # ring. It is taken off the tags here rather than carried through, because
+            # an attribute no renderer reads is the one thing not worth emitting - and
+            # `check_osm` would be right to ask what draws it.
+            _level = _tags.pop('m4fs:level', None) == 'yes'
             _xs = [p[0] for p in _pts]
             _ys = [p[1] for p in _pts]
             _cx, _cy = (min(_xs) + max(_xs)) / 2.0, (min(_ys) + max(_ys)) / 2.0
@@ -2386,8 +2393,9 @@ if os.path.exists(_INPUT_OSM):
                 'centre': (_cx, _cy),
                 'size': (_w_size, _h_size),
                 'ring': _pts,
-                'feather_m': 8.0,
-                'drain_grade': 0.0,
+                'feather_m': YARD_FEATHER_M,
+                'drain_grade': YARD_DRAIN_GRADE,
+                'level': _level,
                 'tags': _tags,
             })
             AREAS.append({

@@ -795,8 +795,8 @@ def clean_town_and_reservoir_area(valle_play):
     return out
 
 
-def level_town_platforms(valle_play):
-    """Level the ground under every town platform in the replicated DEM.
+def level_platforms(valle_play):
+    """Level the ground under every platform the layout marks in the replicated DEM.
 
     The playable area of the output is copied from the input PNG, so the platforms
     `grade_pads` levels in `sculpt()` never reach it - this is the one place a pad
@@ -818,10 +818,10 @@ def level_town_platforms(valle_play):
       cuts a step wherever the platform sits deep.
 
     The work is done in a window round the platform rather than over the whole 8192 m
-    square: `rect_sdf` of a 524 x 646 m pad over 67 megapixels is 268 MB of float per
+    square: `rect_sdf` of a 400 m pad over 67 megapixels is 268 MB of float per
     temporary, and the answer is zero everywhere past the feather cap anyway.
     """
-    pads = [p for p in ml.pads() if p.get('kind') == 'town']
+    pads = [p for p in ml.pads() if p.get('level')]
     if not pads:
         return valle_play
     out = valle_play.copy()
@@ -975,11 +975,11 @@ def main():
         print("   Cleaning town area and water reservoir in DEM...")
         valle_play = clean_town_and_reservoir_area(valle_play)
 
-        # The town platforms, before the lake: a water body carves whatever it meets,
+        # The platforms, before the lake: a water body carves whatever it meets,
         # so where the two ever overlap the basin wins rather than a flat pan over it.
-        print(f"   Levelling {len([p for p in ml.pads() if p.get('kind') == 'town'])} "
-              f"town platform(s) in DEM...")
-        valle_play = level_town_platforms(valle_play)
+        print(f"   Levelling {len([p for p in ml.pads() if p.get('level')])} "
+              f"platform(s) in DEM...")
+        valle_play = level_platforms(valle_play)
 
         # Sculpt western mountain lake
         print("   Sculpting western mountain lake in DEM...")
