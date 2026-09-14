@@ -55,7 +55,7 @@ import sys
 import time
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 Image.MAX_IMAGE_PIXELS = None
 
 from scipy import ndimage
@@ -795,6 +795,76 @@ def clean_town_and_reservoir_area(valle_play):
     return out
 
 
+def sculpt_western_lake(valle_play):
+    """Carves the western mountain lake basin into valle_play.
+
+    The lake sits strictly BELOW the surrounding terrain with no elevated border.
+    The outer margin where the old mountain foot was raised above the plain is
+    restored to the natural plain level (35.0 - 36.0 m).
+    Inside the lake, the bed descends over a bank and littoral shelf to a deep
+    natural basin with a maximum depth of up to 40 meters (bed down to 1.5 m).
+    """
+    water_bodies = [w for w in ml.water() if w.get('ring')]
+    if not water_bodies:
+        return valle_play
+
+    out = valle_play.copy()
+    playable_m = int(ml.PLAYABLE_M)
+
+    for w in water_bodies:
+        pts = w['ring']
+        mask_img = Image.new('L', (playable_m, playable_m), 0)
+        draw = ImageDraw.Draw(mask_img)
+        draw.polygon(pts, outline=1, fill=1)
+        mask = np.array(mask_img, dtype=bool)
+
+        d_in = ndimage.distance_transform_edt(mask)
+        d_out = ndimage.distance_transform_edt(~mask)
+
+        # 1. Restore the outside plain: find the clean reference plain height outside the old mountain ramp
+        ref_mask = (d_out >= 75) & (d_out <= 85)
+        _, (ry, rx) = ndimage.distance_transform_edt(~ref_mask, return_indices=True)
+        plain_ref_z = out[ry, rx]
+
+        ramp_width = 80.0
+        out_u = np.clip(d_out / ramp_width, 0.0, 1.0)
+        out_w = out_u * out_u * (3.0 - 2.0 * out_u)
+
+        outside_restored = np.where(~mask & (d_out < ramp_width),
+                                    (1.0 - out_w) * np.minimum(out, plain_ref_z) + out_w * out,
+                                    out)
+
+        # 2. Shore bank height from outside_restored
+        _, (sy, sx) = ndimage.distance_transform_edt(mask, return_indices=True)
+        shore_bank_z = outside_restored[sy, sx]
+
+        water_ws = 35.0
+
+        # Bank slope over 0..20m: from shore_bank_z down to water_ws (35.0m)
+        bank_w_m = 20.0
+        b_u = np.clip(d_in / bank_w_m, 0.0, 1.0)
+        b_w = b_u * b_u * (3.0 - 2.0 * b_u)
+        near_shore_z = (1.0 - b_w) * np.maximum(shore_bank_z, water_ws) + b_w * water_ws
+
+        # Bed slope over 20..140m: from water_ws down to deep lake bed
+        shelf_m = 120.0
+        s_u = np.clip((d_in - bank_w_m) / shelf_m, 0.0, 1.0)
+        s_w = s_u * s_u * (3.0 - 2.0 * s_u)
+
+        deep_u = np.clip((d_in - bank_w_m - shelf_m) / (d_in.max() - bank_w_m - shelf_m), 0.0, 1.0)
+        deep_w = deep_u * deep_u * (3.0 - 2.0 * deep_u)
+        # Deepest bed at 1.5 m (depth up to 40 m from surrounding 41.5m terrain, 33.5 m below water surface)
+        target_bed = (water_ws - 20.0) - 13.5 * deep_w
+
+        lake_bed_z = np.where(d_in <= bank_w_m,
+                              near_shore_z,
+                              (1.0 - s_w) * water_ws + s_w * target_bed)
+
+        out = np.where(mask, lake_bed_z, outside_restored)
+
+    return out
+
+
 def main():
     t_start = time.time()
     print(f"=== FS25 DEM generator ({CANVAS_M}x{CANVAS_M} m canvas, "
@@ -836,11 +906,16 @@ def main():
     if os.path.exists(input_dem):
         print(f"   Replicating playable area from '{input_dem}' with original non-playable border...")
         valle = np.array(Image.open(input_dem))
+        raw = valle.copy()
         valle_play = valle[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M].astype(np.float32) / 100.0
 
         # Clean town and reservoir area (x in [6850, 8192], y in [800, 2500])
         print("   Cleaning town area and water reservoir in DEM...")
         valle_play = clean_town_and_reservoir_area(valle_play)
+
+        # Sculpt western mountain lake
+        print("   Sculpting western mountain lake in DEM...")
+        valle_play = sculpt_western_lake(valle_play)
 
         raw[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M] = np.rint(valle_play * 100.0).astype(np.uint16)
 

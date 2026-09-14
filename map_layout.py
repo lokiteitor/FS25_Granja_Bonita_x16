@@ -2328,6 +2328,14 @@ if os.path.exists(_INPUT_OSM):
                 'bridge_spans': [],
                 'tags': _tags,
             })
+        elif _tags.get('natural') == 'water' or _tags.get('water') == 'lake':
+            WATER.append({
+                'id': f'water_{_wid}',
+                'kind': _tags.get('water', 'lake'),
+                'name': _name,
+                'ring': _pts,
+                'tags': _tags,
+            })
         elif _tags.get('natural') == 'wood' or _tags.get('landuse') == 'forest':
             AREAS.append({
                 'id': f'wood_{_wid}',
@@ -2446,6 +2454,19 @@ def validate():
         if len(p['ring']) < 4 or math.dist(p['ring'][0], p['ring'][-1]) > 1e-6:
             bad.append(f"{p['id']}: pad ring does not close on its first point")
 
+    for w in WATER:
+        if not w.get('tags'):
+            bad.append(f"{w['id']}: untagged water body")
+        elif not any(k in w['tags'] and (v is None or w['tags'][k] == v) for k, v in RENDERED_TAGS):
+            bad.append(f"{w['id']}: tagged {w['tags']} - neither renderer draws that")
+        if w.get('ring'):
+            if len(w['ring']) < 4 or math.dist(w['ring'][0], w['ring'][-1]) > 1e-6:
+                bad.append(f"{w['id']}: ring does not close on its first point")
+            for x, y in w['ring']:
+                if not (-0.5 <= x <= PLAYABLE_M + 0.5 and -0.5 <= y <= PLAYABLE_M + 0.5):
+                    bad.append(f"{w['id']}: point ({x:.1f}, {y:.1f}) outside playable bounds")
+                    break
+
     for a in AREAS:
         if not a.get('tags'):
             bad.append(f"{a['id']}: untagged - both renderers would drop it")
@@ -2468,9 +2489,10 @@ def summary():
                 f"yet, flat at {BASE_ELEV_M:.0f} m inside a valley rim rising to "
                 f"{RIM_CREST_M:.0f} m")
     woods = [a for a in AREAS if a.get('kind') == 'wood' or a.get('tags', {}).get('natural') == 'wood']
+    water_str = f", {len(WATER)} water body" if len(WATER) == 1 else (f", {len(WATER)} water bodies" if len(WATER) > 1 else "")
     return (f"{PLAYABLE_M:.0f} m playable on a {CANVAS_M:.0f} m canvas, "
             f"{len(CORRIDORS)} roads, {len(PADS)} farmyards, {len(FIELDS)} fields, "
-            f"{len(woods)} woods, datum {BASE_ELEV_M:.1f} m, "
+            f"{len(woods)} woods{water_str}, datum {BASE_ELEV_M:.1f} m, "
             f"rim to {RIM_CREST_M:.0f} m")
 
 

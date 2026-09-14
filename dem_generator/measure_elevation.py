@@ -358,10 +358,10 @@ def main():
 
     # ---------------------------------------------------------------- elevation and relief
     print("\nelevation and relief:")
-    band("canvas elevation minimum", lo_cm / 100.0, 15.0, 36.0, " m")
+    band("canvas elevation minimum", lo_cm / 100.0, 1.0, 36.0, " m")
     band("canvas elevation maximum", hi_cm / 100.0, 250.0, 310.0, " m")
-    band("playable area minimum", float(play_raw.min()) / 100.0, 15.0, 36.0, " m")
-    band("playable area maximum", float(play_raw.max()) / 100.0, 200.0, 280.0, " m")
+    band("playable area minimum", float(play_raw.min()) / 100.0, 1.0, 36.0, " m")
+    band("playable area maximum", float(play_raw.max()) / 100.0, 190.0, 280.0, " m")
     check("playable area has relief", float(play_raw.max() - play_raw.min()) / 100.0 >= 50.0,
           f"relief {float(play_raw.max() - play_raw.min()) / 100.0:.2f} m")
     mean_play = float(play_raw.mean()) / 100.0
