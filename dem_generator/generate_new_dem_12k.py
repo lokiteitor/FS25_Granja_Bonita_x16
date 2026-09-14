@@ -795,6 +795,68 @@ def clean_town_and_reservoir_area(valle_play):
     return out
 
 
+def level_town_platforms(valle_play):
+    """Level the ground under every town platform in the replicated DEM.
+
+    The playable area of the output is copied from the input PNG, so the platforms
+    `grade_pads` levels in `sculpt()` never reach it - this is the one place a pad
+    can be applied and survive. The geometry is still the layout's: the rectangle,
+    the feather and the drain grade all come off the `town` pad record, and nothing
+    here decides where a town is.
+
+    Three things it shares with `grade_pads`, because they are the same operation:
+
+    * **The target is the median of the ground the platform stands on**, not a
+      constant, so the town sits on its own hillside instead of being quoted against
+      a datum that is a mean and not a height.
+    * **It is not dead flat.** `drain_grade` leaves a third of a percent of fall to
+      the south, clamped to the platform's own extent - left to run on, the target
+      plane keeps climbing past the edge while the ground under it does whatever it
+      does, and the feather sized off `dz` grows with distance instead of settling.
+    * **The feather widens with the cut**, `max(nominal, 1.5*|dz|/tan(4 deg))`, because
+      in a smoothstep the steepest gradient is `1.5*rise/run` and a constant feather
+      cuts a step wherever the platform sits deep.
+
+    The work is done in a window round the platform rather than over the whole 8192 m
+    square: `rect_sdf` of a 524 x 646 m pad over 67 megapixels is 268 MB of float per
+    temporary, and the answer is zero everywhere past the feather cap anyway.
+    """
+    pads = [p for p in ml.pads() if p.get('kind') == 'town']
+    if not pads:
+        return valle_play
+    out = valle_play.copy()
+    tan_bank = math.tan(math.radians(BANK_DEG))
+    n = out.shape[0]
+    for p in pads:
+        cx, cy = p['centre']
+        w, h = p['size']
+        pad = FEATHER_CAP_M + 2.0
+        x0 = max(0, int(math.floor(cx - w / 2.0 - pad)))
+        x1 = min(n, int(math.ceil(cx + w / 2.0 + pad)))
+        y0 = max(0, int(math.floor(cy - h / 2.0 - pad)))
+        y1 = min(n, int(math.ceil(cy + h / 2.0 + pad)))
+        if x1 <= x0 or y1 <= y0:
+            continue
+        # Playable metres of pixel centres, the frame map_layout works in.
+        X = (np.arange(x0, x1, dtype=np.float32) + 0.5)[None, :]
+        Y = (np.arange(y0, y1, dtype=np.float32) + 0.5)[:, None]
+        z = out[y0:y1, x0:x1]
+        d = ops.rect_sdf(X, Y, cx - w / 2.0, cy - h / 2.0,
+                         cx + w / 2.0, cy + h / 2.0)
+        on = d <= 0.0
+        if not bool(on.any()):
+            continue
+        sy = np.clip(cy - Y, -h / 2.0, h / 2.0)
+        target = (float(np.median(z[on])) + p['drain_grade'] * sy).astype(np.float32)
+        dz = target - z
+        feather = np.clip(1.5 * np.abs(dz) / tan_bank, p['feather_m'], FEATHER_CAP_M)
+        out[y0:y1, x0:x1] = z + (1.0 - ops.smoothstep(d / feather)) * dz
+        print(f"   {p['name']}: {w:.0f} x {h:.0f} m platform levelled to "
+              f"{float(np.median(z[on])):.2f} m, cut/fill "
+              f"{float(np.abs(dz[on]).max()):.2f} m at worst")
+    return out
+
+
 def sculpt_western_lake(valle_play):
     """Carves the western mountain lake basin into valle_play.
 
@@ -912,6 +974,12 @@ def main():
         # Clean town and reservoir area (x in [6850, 8192], y in [800, 2500])
         print("   Cleaning town area and water reservoir in DEM...")
         valle_play = clean_town_and_reservoir_area(valle_play)
+
+        # The town platforms, before the lake: a water body carves whatever it meets,
+        # so where the two ever overlap the basin wins rather than a flat pan over it.
+        print(f"   Levelling {len([p for p in ml.pads() if p.get('kind') == 'town'])} "
+              f"town platform(s) in DEM...")
+        valle_play = level_town_platforms(valle_play)
 
         # Sculpt western mountain lake
         print("   Sculpting western mountain lake in DEM...")

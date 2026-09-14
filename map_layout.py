@@ -2353,6 +2353,27 @@ if os.path.exists(_INPUT_OSM):
                 'tags': _tags,
             })
             FIELDS.append(AREAS[-1])
+        elif _tags.get('place') in ('town', 'village'):
+            # A town's platform, and nothing else: it says where the ground was
+            # levelled, not what stands on it. The town's drawn form is its blocks,
+            # which are `AREAS` rings of their own, so this record carries no `tags`
+            # key - `emit_pads` draws only the pads that have one, and a platform that
+            # drew itself would put a second footprint over every block in the grid.
+            # One platform for the whole town rather than one per block, so the streets
+            # between them come out flat and continuous instead of stepping at a kerb.
+            _xs = [p[0] for p in _pts]
+            _ys = [p[1] for p in _pts]
+            _cx, _cy = (min(_xs) + max(_xs)) / 2.0, (min(_ys) + max(_ys)) / 2.0
+            PADS.append({
+                'id': f'town_pad_{_wid}',
+                'kind': 'town',
+                'name': _name,
+                'centre': (_cx, _cy),
+                'size': (max(_xs) - min(_xs), max(_ys) - min(_ys)),
+                'ring': _pts,
+                'feather_m': TOWN_PAD_FEATHER_M,
+                'drain_grade': TOWN_DRAIN_GRADE,
+            })
         elif _tags.get('landuse') == 'farmyard':
             _xs = [p[0] for p in _pts]
             _ys = [p[1] for p in _pts]
