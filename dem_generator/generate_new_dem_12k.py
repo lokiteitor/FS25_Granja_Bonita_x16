@@ -773,6 +773,180 @@ def draw_figures(raw, out_vis, out_detail):
 
 
 # ==================================================================================
+# The non-playable border comes from the source DEM verbatim, and that border carries
+# four straight channels - the outlets of a river this map no longer has - cut from the
+# playable boundary clean through the valley wall to the canvas edge, a pair at each of
+# two opposite corners. They are the only breaches in the rim, and closing the horizon is
+# the whole of what the rim is for.
+#
+# The repair is written as a property of the ground rather than as four rectangles,
+# because four rectangles stop being right the day the source DEM changes. A *trench* is
+# anything a grey closing this wide has to fill by more than BORDER_TRENCH_M; a *breach*
+# is a trench that runs the whole depth of the border, touching the canvas edge at one end
+# and the apron at the other. The border's own saddles and re-entrants are trenches too -
+# the detector finds around eighty of them - and every one fails the second half of that
+# test, because a saddle in a range is open at one end and not at both.
+BORDER_BRIDGE_M = 141.0     # the widest trench the repair will bridge
+BORDER_TRENCH_M = 3.0       # ... and how deep it has to be before it counts as one
+BORDER_GROW_M = 80.0        # grow the mask onto ground the trench never touched: anchored
+                            # on the trench's own flank the fill lands four metres out
+BORDER_SCAN_PX = 4          # the border is smooth at 1 m/px; detect and fill at 4 m
+
+
+def _inpaint(sub, m):
+    """Replace `sub[m]` with a smooth surface that meets the ground around it.
+
+    Nearest-neighbour first so nothing starts at a wild value, then relaxation under a
+    Gaussian from coarse to fine with everything outside the mask held fixed - which is
+    diffusion again, and converges on the harmonic fill through the boundary values. The
+    coarse passes carry the shape of the ridge across the gap; the fine ones take the
+    kink out of where the fill meets the ground.
+    """
+    _, idx = ndimage.distance_transform_edt(m, return_indices=True)
+    sub[m] = sub[idx[0][m], idx[1][m]]
+    for sigma in (16.0, 12.0, 8.0, 6.0, 4.0, 3.0, 2.0, 1.5, 1.0):
+        for _ in range(10):
+            sub[m] = ndimage.gaussian_filter(sub, sigma)[m]
+    return sub
+
+
+def fill_border_trenches(raw):
+    """Close every channel cut clean through the non-playable border. In place.
+
+    Detection and the fill both run on a `BORDER_SCAN_PX` reduction of the canvas: the
+    border is a smooth surface - nowhere in it does the source DEM step more than 30 cm
+    between neighbouring metres - so a quarter-resolution grid holds everything the
+    repair needs, and a 141 m closing over 150 megapixels does not.
+
+    Only the correction comes back to full resolution, interpolated over the boxes it is
+    nonzero in. It is zero outside the mask by construction, so no ground the trenches
+    never reached is touched, and the playable square is outside it twice over.
+    """
+    k = BORDER_SCAN_PX
+    n = raw.shape[0]
+    m = n // k
+    z = (raw.reshape(m, k, m, k).mean(axis=(1, 3)) / 100.0).astype(np.float32)
+
+    # Metres out of the playable square, at the centre of each coarse cell.
+    c = np.arange(m, dtype=np.float32) * k + 0.5 * k
+    dc = np.maximum(0.0, np.maximum(OFFSET_M - c, c - (OFFSET_M + PLAYABLE_M)))
+    d_out = np.hypot(dc[None, :], dc[:, None])
+
+    w = max(3, int(round(BORDER_BRIDGE_M / k)) | 1)
+    deficit = ndimage.grey_closing(z, size=(w, w), mode='nearest') - z
+    trench = (deficit > BORDER_TRENCH_M) & (d_out >= ml.RIM_APRON_M)
+    lbl, _ = ndimage.label(trench)
+
+    # A breach runs the whole depth of the border: it reaches the canvas edge and it
+    # reaches the apron. A saddle does one or the other and is left where it is.
+    at_edge = np.zeros(trench.shape, dtype=bool)
+    at_edge[0] = at_edge[-1] = True
+    at_edge[:, 0] = at_edge[:, -1] = True
+    at_apron = d_out < ml.RIM_APRON_M + k
+    keep = sorted((set(np.unique(lbl[at_edge & trench])) - {0})
+                  & (set(np.unique(lbl[at_apron & trench])) - {0}))
+    if not keep:
+        return raw, 0
+
+    # Grown onto undisturbed ground either side, and never inside the playable square.
+    mask = ndimage.distance_transform_edt(~np.isin(lbl, keep)) <= BORDER_GROW_M / k
+    mask &= d_out > 0.0
+
+    delta = np.zeros_like(z)
+    parts, _ = ndimage.label(mask)
+    for i, (sy, sx) in enumerate(ndimage.find_objects(parts), 1):
+        pad = 2 * w
+        y0, y1 = max(0, sy.start - pad), min(m, sy.stop + pad)
+        x0, x1 = max(0, sx.start - pad), min(m, sx.stop + pad)
+        sub, mm = z[y0:y1, x0:x1].copy(), mask[y0:y1, x0:x1]
+        delta[y0:y1, x0:x1] = _inpaint(sub, mm) - z[y0:y1, x0:x1]
+
+    # Back to full resolution, one box at a time. Coarse cell j spans [jk, jk+k), so the
+    # coarse coordinate of output pixel i is (i + 0.5)/k - 0.5.
+    for sy, sx in ndimage.find_objects(parts):
+        y0, y1 = max(0, sy.start - 1) * k, min(m, sy.stop + 1) * k
+        x0, x1 = max(0, sx.start - 1) * k, min(m, sx.stop + 1) * k
+        rr = (np.arange(y0, y1, dtype=np.float32) + 0.5) / k - 0.5
+        cc = (np.arange(x0, x1, dtype=np.float32) + 0.5) / k - 0.5
+        d = ndimage.map_coordinates(
+            delta, np.meshgrid(rr, cc, indexing='ij'), order=1, mode='nearest')
+        box = raw[y0:y1, x0:x1].astype(np.float32) + d * 100.0
+        raw[y0:y1, x0:x1] = np.rint(np.clip(box, 0.0, 65535.0)).astype(np.uint16)
+
+    return raw, len(keep)
+
+
+# ==================================================================================
+# The ridge in the east of the map dies before it gets out: the crest holds its height
+# across the uplands and then collapses over the last two hundred metres of playable
+# ground, so the range ends in a cliff at the boundary with the border's own mountains
+# standing clear of it. Running it on is one operation and not two - the ground inside the
+# map and the ground outside it are the same ridge - so it is done on the whole canvas at
+# once, and the apron is blended afterwards against the ground this leaves rather than
+# against the ground that was there before.
+#
+# The construction is a swept cross-section: the last station where the ridge still stands
+# is the donor, and its section is carried east, losing EAST_RIDGE_SAG_M to a col on the
+# way, until the border range rises over it and a maximum hands the ground back. Nothing
+# says where the range ends, which is the point - it ends where it meets the other one.
+EAST_RIDGE_KEEP = 0.90       # the donor is the last station standing this high
+EAST_RIDGE_SEARCH_M = 1500.0 # ... looked for over this much of the ridge's own length
+EAST_RIDGE_SAG_M = 25.0      # the col between the two ranges
+EAST_RIDGE_SAG_RUN_M = 500.0 # ... reached over this much of the run
+EAST_RIDGE_FEATHER_M = 200.0 # the section is carried to nothing over this, either side
+EAST_RIDGE_BLUR_M = 25.0     # rounds the break the swept section makes at the donor
+
+
+def extend_east_ridge(raw):
+    """Run the eastern ridge across the boundary and into the border range. In place.
+
+    The band it works in is the wood's own: the timber is what is drawn on this ridge, so
+    the ring is the one record of where the ridge is, and taking the band from anywhere
+    else would be a second opinion about a thing the layout already states. The section is
+    added rather than written - `maximum` against the ground that is there - which is what
+    makes the far end need no constant: over the flanks of the border range the range is
+    already higher and the operation does nothing at all.
+    """
+    ring = next((a['ring'] for a in ml.AREAS
+                 if a['id'] == f'wood_{ml.EAST_RIDGE_WAY}'), None)
+    if ring is None:
+        return raw, None
+
+    x_east = max(p[0] for p in ring)
+    tip = [p for p in ring if p[0] > x_east - ml.EAST_WOOD_STRETCH_M]
+    y0 = min(p[1] for p in tip) - EAST_RIDGE_FEATHER_M
+    y1 = max(p[1] for p in tip) + EAST_RIDGE_FEATHER_M
+
+    r0 = max(0, int(round(y0)) + OFFSET_M)
+    r1 = min(raw.shape[0], int(round(y1)) + OFFSET_M)
+    c_end = int(round(x_east)) + OFFSET_M
+    c_lo = max(0, c_end - int(EAST_RIDGE_SEARCH_M))
+    z = raw[r0:r1, c_lo:].astype(np.float32) / 100.0
+
+    # The donor: the easternmost station whose crest still stands at EAST_RIDGE_KEEP of
+    # the best the ridge makes over the search. Read off the ground rather than set as a
+    # setback from the boundary, because how far in the collapse reaches is a property of
+    # the source DEM and not of the map.
+    crest = z[:, :c_end - c_lo].max(axis=0)
+    j0 = int(np.nonzero(crest >= EAST_RIDGE_KEEP * crest.max())[0].max())
+
+    xs = np.arange(z.shape[1] - j0, dtype=np.float32)
+    drop = EAST_RIDGE_SAG_M * ops.smoothstep(xs / EAST_RIDGE_SAG_RUN_M)
+    ys = np.arange(r0, r1, dtype=np.float32) - OFFSET_M
+    w = ops.smoothstep(np.minimum(ys - y0, y1 - ys) / EAST_RIDGE_FEATHER_M)
+
+    blk = z[:, j0:]
+    lift = np.maximum(0.0, z[:, j0][:, None] - drop[None, :] - blk) * w[:, None]
+    # The swept section meets the collapsing ridge in a break line at the donor. Blurring
+    # the lift rounds it off without touching the ridge itself: the lift is zero over
+    # everything the extension does not reach, so what the blur spreads there is zero.
+    lift = ndimage.gaussian_filter(lift, EAST_RIDGE_BLUR_M)
+    z[:, j0:] = blk + lift
+    raw[r0:r1, c_lo:] = np.rint(np.clip(z * 100.0, 0.0, 65535.0)).astype(np.uint16)
+    return raw, (c_lo + j0 - OFFSET_M, float(lift.max()))
+
+
+# ==================================================================================
 def clean_town_and_reservoir_area(valle_play):
     """Cleans and restores the region previously occupied by the town and water reservoir
     (x in [6930, 8192], y in [0, 2400]). Removes all artificial flattening, reservoir depressions,
@@ -969,6 +1143,11 @@ def main():
         print(f"   Replicating playable area from '{input_dem}' with original non-playable border...")
         valle = np.array(Image.open(input_dem))
         raw = valle.copy()
+
+        # The border arrives with the old river's outlets cut through it; the rim is not
+        # a rim while anything runs clean through it.
+        raw, n_breach = fill_border_trenches(raw)
+        print(f"   Closing {n_breach} channel(s) cut through the non-playable border...")
         valle_play = valle[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M].astype(np.float32) / 100.0
 
         # Clean town and reservoir area (x in [6850, 8192], y in [800, 2500])
@@ -986,6 +1165,17 @@ def main():
         valle_play = sculpt_western_lake(valle_play)
 
         raw[OFFSET_M:OFFSET_M + PLAYABLE_M, OFFSET_M:OFFSET_M + PLAYABLE_M] = np.rint(valle_play * 100.0).astype(np.uint16)
+
+        # The ridge spans the boundary, so it is run after the playable square is in
+        # place and before the apron is blended - and the apron's inner value is read
+        # back out of `raw` afterwards, because what it has to come down to is the
+        # ground that is there and not the copy `valle_play` was before this.
+        raw, ridge = extend_east_ridge(raw)
+        if ridge is not None:
+            print(f"   Running the eastern ridge out of the map from x = {ridge[0]:.0f} m,"
+                  f" {ridge[1]:.0f} m at the deepest...")
+            valle_play = (raw[OFFSET_M:OFFSET_M + PLAYABLE_M,
+                              OFFSET_M:OFFSET_M + PLAYABLE_M].astype(np.float32) / 100.0)
 
         ys = np.arange(CANVAS_M)
         xs = np.arange(CANVAS_M)

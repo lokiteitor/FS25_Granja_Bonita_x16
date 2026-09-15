@@ -2967,6 +2967,13 @@ def rng():
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 _INPUT_OSM = os.path.join(_ROOT, 'input', 'custom_osm.osm')
 
+# The ridge in the east of the map and the wood that stands on it. Both halves of the
+# pipeline need to agree which feature this is - the OSM stretches the wood's ring out to
+# the clean strip, the DEM runs the ground under it across the boundary and into the
+# border range - so the way id is named once, here, and read from both.
+EAST_RIDGE_WAY = 517
+EAST_WOOD_STRETCH_M = 400.0     # how much of the wood's tip takes up the stretch
+
 CORRIDORS = []
 WATER = []
 PADS = []
@@ -3014,9 +3021,17 @@ if os.path.exists(_INPUT_OSM):
 
     _TOWN_RESERVOIR_WAYS = {2, 4, 9, 14, 15, 16, 17, 18, 282, 337, 338}
 
+    # Open Ground parcels dropped from the map. They are still drawn in the input file,
+    # which is the authored survey and is not edited here - a way is taken out by id, the
+    # same way the town and reservoir ways are, so the input stays the one record of what
+    # was surveyed and this module stays the one record of what is built.
+    #   292 I11   296 I15   300 I19   303 I22
+    #   306 I25   309 I28   312 I31   339 I5
+    _DROPPED_WAYS = {292, 296, 300, 303, 306, 309, 312, 339}
+
     for _w in _root.findall('way'):
         _wid = int(_w.get('id'))
-        if _wid <= 0 or _wid in _TOWN_RESERVOIR_WAYS:
+        if _wid <= 0 or _wid in _TOWN_RESERVOIR_WAYS or _wid in _DROPPED_WAYS:
             continue
         _tags = {t.get('k'): t.get('v') for t in _w.findall('tag')}
         _refs = [int(nd.get('ref')) for nd in _w.findall('nd')]
@@ -3118,6 +3133,26 @@ if os.path.exists(_INPUT_OSM):
                 'ring': _pts,
                 'tags': _tags,
             })
+
+
+    # The eastern ridge runs out of the map - the DEM carries it across the boundary and
+    # into the border range - and its timber runs with it as far as a vector is allowed
+    # to go, which is the clean strip and not a metre further. The ring is *stretched*
+    # rather than translated or clipped: the last EAST_WOOD_STRETCH_M of it take up the
+    # whole of the gap on a smoothstep, so the rounded tip the way was drawn with is kept
+    # and only moved, and everything west of that stands exactly where it was surveyed.
+    for _a in AREAS:
+        if _a['id'] != f'wood_{EAST_RIDGE_WAY}':
+            continue
+        _x_end = max(_p[0] for _p in _a['ring'])
+        _gap = (PLAYABLE_M - EDGE_CLEAR_M) - _x_end
+        if _gap > 0.0:
+            _x_lo = _x_end - EAST_WOOD_STRETCH_M
+            _ring = []
+            for _px, _py in _a['ring']:
+                _t = min(1.0, max(0.0, (_px - _x_lo) / EAST_WOOD_STRETCH_M))
+                _ring.append((_px + _gap * _t * _t * (3.0 - 2.0 * _t), _py))
+            _a['ring'] = _ring
 
 
 # The shelterbelts are the one thing here that is derived from the input rather than
