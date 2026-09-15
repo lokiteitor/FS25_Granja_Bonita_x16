@@ -1,14 +1,14 @@
 {
     "software": "mapforge 0.1.0",
-    "date": "2026-09-09T13:35:50-06:00",
+    "date": "2026-09-15T12:08:37-06:00",
     "project": {
         "name": "Granja Bonita",
         "size": 8192,
         "rotation": 0.0,
         "rotated_size": 8192,
         "background_size": 12288,
-        "latitude": 43.06,
-        "longitude": -95.28,
+        "latitude": 43.1457,
+        "longitude": -95.1451,
         "output_size": null
     },
     "inputs": {
@@ -31,7 +31,7 @@
             "water_depth": 15,
             "blur_radius": 3,
             "add_foundations": false,
-            "water_bank_steepness": 2,
+            "water_bank_steepness": 3,
             "flatten_farmyard": false,
             "flatten_farmyard_feather": 8.0,
             "flatten_farmyard_max_relief": 10.0
@@ -73,8 +73,8 @@
                     242,
                     247
                 ],
-                "rock_height": 130,
-                "snow_height": 200,
+                "rock_height": 110,
+                "snow_height": 120,
                 "band_blend": 25,
                 "band_noise": 12,
                 "slope_rock_deg": 30,
@@ -135,17 +135,17 @@
     ],
     "skipped_stages": [],
     "timings_s": {
-        "template": 0.035,
-        "textures": 33.819,
-        "dem": 31.511,
-        "grle_layers": 23.521,
-        "farmlands": 0.357,
-        "plants": 15.917,
-        "fields": 0.155,
-        "splines": 0.078,
+        "template": 0.061,
+        "textures": 26.119,
+        "dem": 20.19,
+        "grle_layers": 20.082,
+        "farmlands": 0.321,
+        "plants": 7.081,
+        "fields": 0.132,
+        "splines": 0.032,
         "i3d": 0.054,
-        "background": 48.992,
-        "total": 154.443
+        "background": 34.109,
+        "total": 108.181
     },
     "components": {
         "template": {
@@ -154,18 +154,18 @@
         },
         "textures": {
             "osm": {
-                "nodes": 3484,
-                "ways": 424,
+                "nodes": 24863,
+                "ways": 317,
                 "relations": 0,
-                "features": 424
+                "features": 317
             },
             "layers": 43,
             "info_layers": {
                 "buildings": 12,
-                "farmyards": 113,
-                "roads": 194,
-                "roads_polylines": 194,
-                "fields": 115
+                "farmyards": 65,
+                "roads": 90,
+                "roads_polylines": 90,
+                "fields": 161
             }
         },
         "dem": {
@@ -173,23 +173,23 @@
             "height_scale": 255,
             "stages": {
                 "original": {
-                    "min": 2000.0,
-                    "max": 25017.0,
-                    "deviation": 23017.0,
+                    "min": 150.0,
+                    "max": 29540.0,
+                    "deviation": 29390.0,
                     "dtype": "uint16",
                     "shape": "(12288, 12288)"
                 },
                 "meters": {
-                    "min": 7.782101167315176,
-                    "max": 97.34241245136188,
-                    "deviation": 89.5603112840467,
+                    "min": 0.5836575875486382,
+                    "max": 114.94163424124515,
+                    "deviation": 114.35797665369651,
                     "dtype": "float64",
                     "shape": "(12288, 12288)"
                 },
                 "raised_lowered": {
                     "min": 30.0,
-                    "max": 119.5603112840467,
-                    "deviation": 89.5603112840467,
+                    "max": 144.3579766536965,
+                    "deviation": 114.35797665369651,
                     "dtype": "float64",
                     "shape": "(12288, 12288)"
                 },
@@ -201,70 +201,70 @@
                 },
                 "normalized": {
                     "min": 7710.0,
-                    "max": 30727.0,
-                    "deviation": 23017.0,
+                    "max": 37100.0,
+                    "deviation": 29390.0,
                     "dtype": "uint16",
                     "shape": "(12288, 12288)"
                 },
                 "blurred": {
                     "min": 7710.0,
-                    "max": 30727.0,
-                    "deviation": 23017.0,
+                    "max": 37100.0,
+                    "deviation": 29390.0,
                     "dtype": "uint16",
                     "shape": "(12288, 12288)"
                 },
                 "full": {
                     "min": 7710.0,
-                    "max": 30727.0,
-                    "deviation": 23017.0,
+                    "max": 37100.0,
+                    "deviation": 29390.0,
                     "dtype": "uint16",
                     "shape": "(12288, 12288)"
                 },
                 "not_resized": {
                     "min": 7710.0,
-                    "max": 14953.0,
-                    "deviation": 7243.0,
+                    "max": 27181.0,
+                    "deviation": 19471.0,
                     "dtype": "uint16",
                     "shape": "(8192, 8192)"
                 },
                 "flatten": {
                     "roads": {
-                        "input": 194,
-                        "applied": 194,
+                        "input": 90,
+                        "applied": 90,
                         "skipped": 0,
                         "unknown_tags": [],
                         "feather": null,
                         "smooth": 25.0
                     },
-                    "changed_pixels": 819559,
-                    "changed_fraction": 0.005428
+                    "changed_pixels": 1616755,
+                    "changed_fraction": 0.010707
                 },
                 "flattened": {
                     "min": 7710.0,
-                    "max": 30727.0,
-                    "deviation": 23017.0,
+                    "max": 37100.0,
+                    "deviation": 29390.0,
                     "dtype": "uint16",
                     "shape": "(12288, 12288)"
                 },
                 "dem": {
                     "min": 7710.0,
-                    "max": 14953.0,
-                    "deviation": 7243.0,
+                    "max": 27180.0,
+                    "deviation": 19470.0,
                     "dtype": "uint16",
                     "shape": "(8193, 8193)"
                 }
             },
             "flatten": {
                 "roads": {
-                    "input": 194,
-                    "applied": 194,
+                    "input": 90,
+                    "applied": 90,
                     "skipped": 0,
                     "unknown_tags": [],
                     "feather": null,
                     "smooth": 25.0
                 },
-                "changed_pixels": 819559,
-                "changed_fraction": 0.005428
+                "changed_pixels": 1616755,
+                "changed_fraction": 0.010707
             }
         },
         "grle_layers": {
@@ -294,7 +294,7 @@
             ]
         },
         "farmlands": {
-            "added": 228,
+            "added": 226,
             "skipped": 0
         },
         "plants": {
@@ -304,15 +304,15 @@
             "base_grass": "meadow",
             "plant_value": 131,
             "islands": 0,
-            "pixels": 127607892,
-            "coverage": 0.4754
+            "pixels": 60060556,
+            "coverage": 0.2237
         },
         "fields": {
-            "added": 115,
-            "skipped": 0
+            "added": 159,
+            "skipped": 2
         },
         "splines": {
-            "written_curves": 388
+            "written_curves": 180
         },
         "i3d": {
             "terrain": {
@@ -342,72 +342,72 @@
         "background": {
             "obj": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_bonita/background/decimated_background.obj",
             "texture": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_bonita/assets/background/background_texture.png",
-            "translation_y": 119.56031128404669,
+            "translation_y": 144.3579766536965,
             "parts": [
                 {
                     "name": "background_terrain_part_01",
                     "i3d": "assets/background/background_terrain_part_01.i3d",
-                    "vertices": 24168,
-                    "faces": 47639
+                    "vertices": 26359,
+                    "faces": 52090
                 },
                 {
                     "name": "background_terrain_part_02",
                     "i3d": "assets/background/background_terrain_part_02.i3d",
-                    "vertices": 17699,
-                    "faces": 34705
+                    "vertices": 24928,
+                    "faces": 49204
                 },
                 {
                     "name": "background_terrain_part_03",
                     "i3d": "assets/background/background_terrain_part_03.i3d",
-                    "vertices": 21378,
-                    "faces": 42070
+                    "vertices": 27449,
+                    "faces": 54271
                 },
                 {
                     "name": "background_terrain_part_04",
                     "i3d": "assets/background/background_terrain_part_04.i3d",
-                    "vertices": 16174,
-                    "faces": 31742
+                    "vertices": 30739,
+                    "faces": 60873
                 }
             ],
             "mesh": {
-                "vertices": 79042,
-                "faces": 156156,
+                "vertices": 109024,
+                "faces": 216438,
                 "x_size": 12288.0,
                 "y_size": 12288.0,
-                "z_size": 76.5566,
+                "z_size": 102.9097,
                 "x_center": 0.0,
                 "y_center": 0.0,
-                "z_center": -38.3055,
+                "z_center": -51.503,
                 "x_min": -6144.0,
                 "x_max": 6144.0,
                 "y_min": -6144.0,
                 "y_max": 6144.0,
-                "z_min": -76.5839,
-                "z_max": -0.0272
+                "z_min": -102.9579,
+                "z_max": -0.0482
             },
             "i3d_references": [
                 {
                     "name": "background_terrain_part_01",
                     "file_id": 1212,
-                    "node_id": 3265,
+                    "node_id": 9010,
                     "filename": "../assets/background/background_terrain_part_01.i3d"
                 },
                 {
                     "name": "background_terrain_part_02",
                     "file_id": 1213,
-                    "node_id": 3266,
+                    "node_id": 9011,
                     "filename": "../assets/background/background_terrain_part_02.i3d"
                 },
                 {
                     "name": "background_terrain_part_03",
                     "file_id": 1214,
-                    "node_id": 3267,
+                    "node_id": 9012,
                     "filename": "../assets/background/background_terrain_part_03.i3d"
                 },
                 {
                     "name": "background_terrain_part_04",
                     "file_id": 1215,
-                    "node_id": 3268,
+                    "node_id": 9013,
                     "filename": "../assets/background/background_terrain_part_04.i3d"
                 }
             ]
