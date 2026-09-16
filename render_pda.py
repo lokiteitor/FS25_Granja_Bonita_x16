@@ -227,14 +227,7 @@ def renderizar_pda(size_total=4096):
             if len(poly) >= 3:
                 draw.polygon(poly, fill=COLOR_GRANJA, outline=COLOR_GRANJA_BORDE, width=borde_granja)
 
-    # 7. Edificios y Zonas Industriales (Polígonos exactos de textures.json)
-    if 'buildings' in tex_data:
-        for b in tex_data['buildings']:
-            poly = [local_m_to_canvas_px(p[0], p[1], size_total) for p in b]
-            if len(poly) >= 3:
-                draw.polygon(poly, fill=COLOR_INDUSTRIAL, outline=COLOR_INDUSTRIAL_BORDE, width=borde_granja)
-
-    # 8. Red de Carreteras y Calles EXACTAS (Polígonos reales de textures.json)
+    # 7. Red de Carreteras y Calles EXACTAS (Polígonos reales de textures.json)
     borde_asfalto = max(1, int(1.2 * escala))
     if 'roads' in tex_data:
         for r in tex_data['roads']:
@@ -269,9 +262,18 @@ img_4k = renderizar_pda(4096)
 
 ruta_satellite_png = os.path.join(MAPA_DIR, 'satellite', 'overview.png')
 img_4k.save(ruta_satellite_png, format="PNG")
-img_4k.save(OVERVIEW_PNG, format="PNG")
 print(f"  -> Guardado: {ruta_satellite_png}")
-print(f"  -> Guardado: {OVERVIEW_PNG}")
+
+try:
+    if os.path.exists(OVERVIEW_PNG):
+        try:
+            os.remove(OVERVIEW_PNG)
+        except Exception:
+            pass
+    shutil.copy2(ruta_satellite_png, OVERVIEW_PNG)
+    print(f"  -> Guardado: {OVERVIEW_PNG}")
+except Exception as e:
+    print(f"  -> Aviso al copiar a {OVERVIEW_PNG}: {e}")
 
 print("\nGenerando preview 2K (2048 x 2048 px)...")
 img_2k = renderizar_pda(2048)
@@ -296,7 +298,7 @@ if RUTA_TEXCONV and os.path.exists(RUTA_TEXCONV):
         '-m', '13',
         '-y',
         '-o', MAP_DIR,
-        OVERVIEW_PNG
+        ruta_satellite_png
     ]
     
     res = subprocess.run(comando, capture_output=True, text=True)
