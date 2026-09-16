@@ -764,7 +764,7 @@
 
   <Scene>
     <Light name="sun" translation="0 400 0" rotation="-39.5664 39.1063 0" objectMask="0x83ff0000" nodeId="12" type="directional" color="1 1 1" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.001" depthMapResolution="2048" shadowFarDistance="1000" shadowExtrusionDistance="200" softShadowsLightSize="0.5" softShadowsLightDistance="15" softShadowsDepthBiasFactor="1" softShadowsMaxPenumbraSize="0.5" numShadowMapSplits="5" shadowMapSplitDistancesParameter="0.9" lastShadowMapSplitBboxMin="-4096,-128,-4096" lastShadowMapSplitBboxMax="4096,148,4096" range="10000" scattering="true"/>
-    <Camera name="persp" translation="-1686.38 3279.83 1547.28" rotation="-76.984 11.3 -1.90455e-07" visibility="false" nodeId="13" fov="60" nearClip="0.01" farClip="6000" orthographicHeight="1500"/>
+    <Camera name="persp" translation="-3526.08 1016.72 1461.61" rotation="-73.0885 60.3917 1.29604e-06" visibility="false" nodeId="13" fov="60" nearClip="0.01" farClip="6000" orthographicHeight="1500"/>
     <TerrainTransformGroup name="terrain" static="true" collisionFilterGroup="0x100" collisionFilterMask="0xfffff9c3" nodeId="15" heightMapId="1" patchSize="65" maxLODDistance="750" heightScale="255" unitsPerPixel="1" lodBlendStart="200" lodBlendEnd="300" lodTextureSize="8192" lodBlendStartDynamic="50" lodBlendEndDynamic="65" detailLodBlendDelta="5" materialId="7" castShadowMap="true" occNumLODs="1" occMaxLODDistance="300" occPatchSize="65" occLevel="2" occDistanceWeight="1" occMaxAdjacentFaces="10">
       <OccluderLods>
         <OccluderLod occLodLevel="0" occFaceCount="100" occMaxHausdorffDistance="7" occMaxHausdorffDistanceExtra="9" occMinHorizontalDistance="1" />
@@ -8616,10 +8616,10 @@
     <TransformGroup name="map" nodeId="6915">
       <TransformGroup name="locations" nodeId="6916"/>
     </TransformGroup>
-    <ReferenceNode name="background_terrain_part_01" referenceId="646" nodeId="6920"/>
-    <ReferenceNode name="background_terrain_part_02" referenceId="647" nodeId="6924"/>
-    <ReferenceNode name="background_terrain_part_03" referenceId="648" nodeId="6928"/>
-    <ReferenceNode name="background_terrain_part_04" referenceId="649" nodeId="6932"/>
+    <ReferenceNode name="background_terrain_part_01" translation="0 -1 0" referenceId="646" nodeId="6920"/>
+    <ReferenceNode name="background_terrain_part_02" translation="0 -1 0" referenceId="647" nodeId="6924"/>
+    <ReferenceNode name="background_terrain_part_03" translation="0 -1 0" referenceId="648" nodeId="6928"/>
+    <ReferenceNode name="background_terrain_part_04" translation="0 -1 0" referenceId="649" nodeId="6932"/>
     <TransformGroup name="Procedural_Placement" nodeId="6934">
       <TransformGroup name="procGenGroup" nodeId="6935"/>
     </TransformGroup>
