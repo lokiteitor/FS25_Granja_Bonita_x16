@@ -3,12 +3,12 @@
   <farmlands infoLayer="farmlands" pricePerHa="12500">
     <farmland id="1" priceScale="0.5" npcName="GRANDPA" defaultFarmProperty="true"/>
     <farmland id="2" priceScale="0.5" npcName="GRANDPA" />
-    <farmland id="3" priceScale="0.5" npcName="GRANDPA" />
-    <farmland id="4" priceScale="0.5" npcName="GRANDPA" />
+    <farmland id="3" priceScale="0.5" npcName="GRANDPA" defaultFarmProperty="true"/>
+    <farmland id="4" priceScale="0.5" npcName="GRANDPA" defaultFarmProperty="true"/>
     <farmland id="5" priceScale="0.5" npcName="GRANDPA" />
     <farmland id="6" priceScale="0.5" npcName="GRANDPA" />
     <farmland id="7" priceScale="0.5" npcName="GRANDPA" />
-    <farmland id="8" priceScale="0.5" npcName="GRANDPA" />
+    <farmland id="8" priceScale="0.5" npcName="GRANDPA" defaultFarmProperty="true"/>
     <farmland id="9" priceScale="0.5" npcName="GRANDPA" />
     <farmland id="10" priceScale="0.5" npcName="GRANDPA" />
     <farmland id="11" priceScale="1" npcName="HELPER" />
@@ -69,7 +69,7 @@
     <farmland id="66" priceScale="1" npcName="FARMER" />
     <farmland id="67" priceScale="1" npcName="FARMER" />
     <farmland id="68" priceScale="1" npcName="FARMER" />
-    <farmland id="69" priceScale="1" npcName="FARMER" defaultFarmProperty="true"/>
+    <farmland id="69" priceScale="1" npcName="FARMER" />
     <farmland id="70" priceScale="1" npcName="FARMER" />
     <farmland id="71" priceScale="1" npcName="FARMER" />
     <farmland id="72" priceScale="1" npcName="FARMER" />
