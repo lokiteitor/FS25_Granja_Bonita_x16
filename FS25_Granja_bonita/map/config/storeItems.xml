@@ -11,9 +11,24 @@
     <storeItem xmlFilename="$data/placeables/mapUS/grainFlourMillUS/grainFlourMillUS.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/oilPlantUS/oilPlantUS.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/sawmillUS/sawmillUS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapEU/sawmill/sawmill.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/spinnery/spinneryUS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapAS/spinneryAS/spinneryAS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapEU/preservedFoodFactory/preservedFoodFactory.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapEU/soupFactory/soupFactory.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapAS/grapeProcessingPlantAS/grapeProcessingPlantAS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapAS/sugarMillAS/sugarMillAS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapEU/potatoProcessingPlant/potatoProcessingPlant.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapUS/tailorUS/tailorUS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapUS/ropemakerUS/ropeMakerUS.xml"/>
+    <storeItem xmlFilename="$data/placeables/mapUS/cooperUS/cooperUS.xml"/>
+    <storeItem xmlFilename="$data/placeables/planET/bga1mw/bga1mw_mixers.xml"/>
+    <storeItem xmlFilename="$data/placeables/planET/bgaBunkerSilo/bgaBunkerSilo.xml"/>
+    <storeItem xmlFilename="$data/placeables/brandless/weighingStations/weighingStationLarge/weighingStationLarge.xml"/>
 
 <!-- SELLING POINTS -->
+    <storeItem xmlFilename="$data/placeables/mapAS/farmersMarketAS/farmersMarketAS.xml"/>
+    <storeItem xmlFilename="$data/placeables/shared/sellingStationGeneric/sellingStationAnimalTrader.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/wagonBuilder/wagonBuilder.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/dredgingBoat/dredgingBoat.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/playgroundMaker/playgroundMakerHall.xml"/>
@@ -33,6 +48,8 @@
     <storeItem xmlFilename="$data/placeables/mapUS/sellingPoints/sellingStationVehicles/sellingStationVehicles.xml"/>
     <storeItem xmlFilename="$data/placeables/mapUS/sellingPoints/gasStation/gasStation01.xml"/>
     <storeItem xmlFilename="$data/maps/mapUS/textures/buildings/animalTrader/animalTrader.xml"/>
+    <storeItem xmlFilename="$data/placeables/shared/buyingStations/buyingStationLiquidManure/buyingStationLiquidManure.xml"/>
+    <storeItem xmlFilename="$data/placeables/shared/buyingStations/buyingStationManure/buyingStationManure.xml"/>
 
 <!-- TRAIN AND WAGONS -->
     <storeItem xmlFilename="$data/vehicles/train/locomotiveUS/forestryLocomotive.xml" />

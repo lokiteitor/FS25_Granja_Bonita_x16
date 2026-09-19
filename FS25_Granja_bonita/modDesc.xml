@@ -23,5 +23,16 @@
         </map>
     </maps>
     <dependencies>
+        <dependency>FS25_Wasserpumpe</dependency>
+        <dependency>FS25_MeatProcessingPlant</dependency>
+        <dependency>FS25_waterProduction_Pack</dependency>
+        <dependency>FS25_CarrefourPack</dependency>
+        <dependency>FS25_ShopAbc</dependency>
+        <dependency>FS25_DiningRoom</dependency>
+        <dependency>FS25_orchardsAndGreenhouses_crossplay</dependency>
+        <dependency>FS25_Planta_de_Celulosa</dependency>
+        <dependency>FS25_SmallShop</dependency>
+        <dependency>FS25_PolandShop</dependency>
+        <dependency>FS25_The_Mechet_Production_And_Industry_Pack</dependency>
     </dependencies>
 </modDesc>
