@@ -59,6 +59,7 @@ import json
 import math
 import os
 import random
+import re
 
 # --- where the map is -------------------------------------------------------------
 # The projection anchor matching the input bounds.
@@ -181,6 +182,36 @@ LAND_MORAINE_STRETCH = 2.6        # ... and are that many times longer than they
 LAND_SWELL_M, LAND_SWELL_LAM_M = 1.9, 900.0
 LAND_SWALE_M, LAND_SWALE_LAM_M = 0.8, 380.0
 LAND_WARP_M, LAND_WARP_LAM_M = 130.0, 1700.0     # domain warp, so nothing reads as a sine
+
+# --- the till's own swell and swale -----------------------------------------------
+# The source DEM (`input/valle_bonito.png`) carries the long wave of the till plain - the
+# moraines at a kilometre and more - but almost nothing between 100 and 400 m, which is
+# the swell-and-swale a field in Clay County actually rises and falls over: a metre or
+# two every few hundred metres, slopes of one to three degrees. The DEM generator adds
+# these three octaves and a warp to the playable square after the copy (`roughen_till`),
+# and nowhere else - the flat strip along the north edge is flat on purpose and is left
+# so, the lake and its shore are left for the lake to carve, the eastern ridge keeps its
+# own shape, and the ground under a levelled platform is levelled again afterwards.
+#
+# Amplitudes are rms in metres (`value_noise` is unit-variance). `*_LAM_M` is the pitch
+# of the noise lattice, and the relief it makes is mostly two to four times longer than
+# that - the 55 m knob lattice puts nothing under ~110 m, which is the generator's own
+# floor for what the 4 m to 1 m resample can carry without ringing. Measured on the
+# till this gives a median slope near 0.9 deg and a 90th percentile near 1.8 deg over a
+# 20 m baseline, against 0.3 and 0.6 in the source.
+TILL_SWELL_M, TILL_SWELL_LAM_M = 1.2, 220.0
+TILL_SWELL_STRETCH = 1.5          # along LAND_MORAINE_GRAIN_DEG, so it reads as till
+TILL_SWALE_M, TILL_SWALE_LAM_M = 0.5, 100.0
+TILL_KNOB_M, TILL_KNOB_LAM_M = 0.2, 55.0
+TILL_WARP_M, TILL_WARP_LAM_M = 60.0, 450.0
+TILL_SHORE_CLEAR_M = 100.0        # no relief this close to the lake's shore ring ...
+TILL_SHORE_FADE_M = 150.0         # ... and it comes in over this much beyond that
+TILL_EDGE_FADE_M = 100.0          # off over the last metres inside the playable boundary
+TILL_FLAT_FADE_M = 150.0          # off over this much next to the deliberately flat strip
+TILL_FLAT_MIN_HA = 10.0           # a flat region smaller than this is not the strip
+TILL_RIDGE_Z_M = (48.0, 60.0)     # the relief fades out between these heights ...
+TILL_RIDGE_SLOPE_DEG = (3.0, 6.0) # ... and between these slopes, so the ridge keeps its shape
+TILL_RIDGE_KEEP = 0.3             # what is left on the ridge: this much of the swale only
 
 # --- the water and its valley -----------------------------------------------------
 # A river runs the whole length of the map from north to south and widens into a lake in
@@ -867,6 +898,7 @@ SHELTER_JOIN_M = 1.0              # where one belt runs into another
 SHELTER_GAP_MAX_M = 40.0          # two fields further apart than this do not share a boundary
 SHELTER_MIN_LEN_M = 100.0         # shorter than this is a clump, not a belt
 SHELTER_STEP_M = 5.0              # how finely a line is walked for obstacles
+SHELTER_MERGE_STEPS = 25          # ... and how finely the gap between two runs is re-walked before they are joined
 SHELTER_EDGE_MIN_M = 40.0         # a straight edge shorter than this is a corner fillet
 # Which side of a field road the belt stands on: -1 is west of a north-south road and
 # north of an east-west one, the windward side for the north-westerlies that do the
@@ -1172,7 +1204,20 @@ def _walk(section, n, obstacles, skip):
                     lo = mid
             s1 = lo
         out.append((s0, s1))
-    return out
+    # Two runs with nothing but clear ground between them are one run. The walk flags a
+    # station with SHELTER_STEP_M / 2 of margin, and a road *ending* at the primary
+    # just across from the belt clears the setback by less than that margin: the
+    # station over it reads blocked, both runs are bisected up to it, and a 10 m gap is
+    # left in a belt with no obstacle in it. The gap is walked again at the fine step
+    # with no margin, and closed if it is clear the whole way.
+    merged = []
+    for s0, s1 in out:
+        if merged and all(not obstacles.blocked(*section(merged[-1][1] + (s0 - merged[-1][1]) * k / SHELTER_MERGE_STEPS), 0.0, skip)
+                          for k in range(1, SHELTER_MERGE_STEPS)):
+            merged[-1] = (merged[-1][0], s1)
+        else:
+            merged.append((s0, s1))
+    return merged
 
 
 # --- along the primaries ------------------------------------------------------------
@@ -3029,6 +3074,19 @@ if os.path.exists(_INPUT_OSM):
     #   306 I25   309 I28   312 I31   339 I5
     _DROPPED_WAYS = {292, 296, 300, 303, 306, 309, 312, 339}
 
+    # Farmyards levelled by name rather than by the `m4fs:level` tag: every yard called
+    # "Granja N" is a working farm and gets a platform. Kept here, like the dropped ways,
+    # so the input stays the untouched survey; a new "Granja 4" drawn there is levelled
+    # without anyone remembering to tag it.
+    _LEVELLED_NAME = re.compile(r'^Granja \d+$')
+
+    # Yards the survey drew that are worked as fields instead. The ring is read as
+    # drawn and only its tags are replaced - it becomes farmland, joins `FIELDS` for
+    # the shelterbelts, and stops being a pad, so the DEM leaves the ground under it
+    # rolling like any other field's.
+    #   326 Open Ground 1
+    _FARMLAND_WAYS = {326}
+
     for _w in _root.findall('way'):
         _wid = int(_w.get('id'))
         if _wid <= 0 or _wid in _TOWN_RESERVOIR_WAYS or _wid in _DROPPED_WAYS:
@@ -3037,6 +3095,8 @@ if os.path.exists(_INPUT_OSM):
         _refs = [int(nd.get('ref')) for nd in _w.findall('nd')]
         _pts = [_node_xy(r) for r in _refs]
         _name = _tags.get('name', f'way_{_wid}')
+        if _wid in _FARMLAND_WAYS:
+            _tags = {'landuse': 'farmland', 'name': _name}
 
         if 'highway' in _tags:
             _kind = _tags['highway']
@@ -3104,7 +3164,8 @@ if os.path.exists(_INPUT_OSM):
             # ring. It is taken off the tags here rather than carried through, because
             # an attribute no renderer reads is the one thing not worth emitting - and
             # `check_osm` would be right to ask what draws it.
-            _level = _tags.pop('m4fs:level', None) == 'yes'
+            _level = (_tags.pop('m4fs:level', None) == 'yes'
+                      or bool(_LEVELLED_NAME.match(_name)))
             # The platform stops at the clean strip like everything else. The ring the
             # OSM draws is clipped to it, and a pad that went on grading to the boundary
             # would leave the strip clear in the vectors and levelled in the ground -
@@ -3155,9 +3216,323 @@ if os.path.exists(_INPUT_OSM):
             _a['ring'] = _ring
 
 
-# The shelterbelts are the one thing here that is derived from the input rather than
-# read out of it: where they stand is decided by the fields and the roads above, and
-# the fields are cut back to make room for them. `SHELTERBELTS` is the list on its own;
+# --- the railway ------------------------------------------------------------------
+# One line, derived from the road it runs beside rather than drawn: the centreline is
+# `RAIL_ALONG_ROAD`'s axis offset `RAIL_OFFSET_M` to one side, run straight on from
+# both ends of the road to the playable boundary so the train leaves the map north and
+# south. Derived, so that moving the road in JOSM moves the railway with it.
+#
+# The ground it takes is cut out of whatever was drawn there, the way the shelterbelts
+# cut the fields: every ring within RAIL_HALF_W_M + RAIL_CLEAR_M of the centreline is
+# trimmed back along the road, and where the line runs straight *through* a ring on its
+# way to the edge the ring is split into the two fields either side. The belts are laid
+# after this, so they keep off the railway on their own.
+RAIL_ALONG_ROAD = 'Mountain Pass Road'
+RAIL_SIDE = +1                 # +1 = left of travel from the road's first node: the lake
+                               # side, where the line meets only three yards and no
+                               # levelled platform; -1 runs into Granja 3
+RAIL_OFFSET_M = 10.0           # centreline to centreline; the beds are 3.5 m apart
+RAIL_HALF_W_M = 2.5
+RAIL_FEATHER_M = 6.0
+RAIL_GRADE_MAX = 0.015
+RAIL_CLEAR_M = 5.0             # from the edge of the bed to anything planted
+RAIL_CORNER_R_M = 6.0          # fillet on a trimmed yard or wood; fields keep theirs
+
+
+def _run_to_edge(p, d):
+    """The point where a ray from `p` along `d` meets the playable boundary."""
+    best = None
+    for k, lim in ((0, 0.0), (0, PLAYABLE_M), (1, 0.0), (1, PLAYABLE_M)):
+        if abs(d[k]) < 1e-12:
+            continue
+        t = (lim - p[k]) / d[k]
+        if t > 1e-9 and (best is None or t < best):
+            best = t
+    return p if best is None else (p[0] + best * d[0], p[1] + best * d[1])
+
+
+def _axis_frame(axis):
+    """Segments of a polyline with unit tangent, unit normal and start arc length."""
+    out, acc = [], 0.0
+    for i in range(len(axis) - 1):
+        a, b = axis[i], axis[i + 1]
+        ll = math.dist(a, b)
+        if ll < 1e-9:
+            continue
+        ux, uy = (b[0] - a[0]) / ll, (b[1] - a[1]) / ll
+        out.append((a, b, ll, ux, uy, -uy, ux, acc))
+        acc += ll
+    return out
+
+
+def _signed_to_axis(p, segs):
+    """(signed distance, arc length, foot) of `p` against the nearest of `segs`:
+    positive on the normal's side (left of travel)."""
+    best = None
+    for a, b, ll, ux, uy, nx, ny, s0 in segs:
+        t = ((p[0] - a[0]) * ux + (p[1] - a[1]) * uy)
+        t = 0.0 if t < 0.0 else (ll if t > ll else t)
+        fx, fy = a[0] + ux * t, a[1] + uy * t
+        d = math.hypot(p[0] - fx, p[1] - fy)
+        if best is None or d < best[0]:
+            sgn = 1.0 if (p[0] - fx) * nx + (p[1] - fy) * ny >= 0.0 else -1.0
+            best = (d, sgn, s0 + t, (fx, fy), (nx, ny))
+    d, sgn, s, foot, n = best
+    return sgn * d, s, foot, n
+
+
+def _densify_ring(ring, step):
+    out = []
+    for i in range(len(ring) - 1):
+        a, b = ring[i], ring[i + 1]
+        k = max(1, int(math.ceil(math.dist(a, b) / step)))
+        out += [(a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k)
+                for j in range(k)]
+    return out
+
+
+def _cut_ring_by_axis(ring, axis, half):
+    """The pieces of `ring` left either side of a reserve `half` wide about `axis`.
+
+    Each side is clipped on its own against the reserve's edge on that side: the ring
+    is walked, every run of it that stands `half` or more off the line is kept, with
+    the exact point where it entered and left that band at each end, and the run is
+    closed back along the edge of the band between those two points. A ring that runs
+    beside the line comes out following it with no wedge where it bends; a ring the
+    line runs through comes out as one piece per side.
+    """
+    x0, y0, x1, y1 = ring_bbox(ring, half + 1.0)
+    frame = _axis_frame(axis)
+    segs = [sg for sg in frame
+            if not boxes_apart((x0, y0, x1, y1), ring_bbox([sg[0], sg[1], sg[0]], 0.0))]
+    if not segs:
+        return [ring[:-1]], False
+    pts = _densify_ring(ring, 3.0)
+    sd = [_signed_to_axis(p, segs)[:2] for p in pts]
+    if all(abs(d) >= half for d, _ in sd):
+        return [ring[:-1]], False
+    if all(abs(d) < half for d, _ in sd):
+        return [], True
+
+    # The band's edge on each side, as (s, point) along the line, within reach.
+    edge = {1.0: [], -1.0: []}
+    for q in densify(axis, 5.0):
+        if not (x0 - 10.0 <= q[0] <= x1 + 10.0 and y0 - 10.0 <= q[1] <= y1 + 10.0):
+            continue
+        _, sq, foot, n = _signed_to_axis(q, segs)
+        for side in edge:
+            edge[side].append((sq, (foot[0] + side * half * n[0],
+                                    foot[1] + side * half * n[1])))
+    for side in edge:
+        edge[side].sort()
+
+    n = len(pts)
+    pieces = []
+    for side in (1.0, -1.0):
+        v = [side * d for d, _ in sd]
+        inside = [x >= half for x in v]
+        if all(inside):
+            pieces.append(list(pts))
+            continue
+        if not any(inside):
+            continue
+        starts = [i for i in range(n) if inside[i] and not inside[i - 1]]
+        for i0 in starts:
+            run = []
+            i = i0
+            while inside[i]:
+                run.append(i)
+                i = (i + 1) % n
+            i_prev, i_next = (i0 - 1) % n, i
+
+            def cross(a, b):
+                t = (v[a] - half) / (v[a] - v[b])
+                return ((pts[a][0] + t * (pts[b][0] - pts[a][0]),
+                         pts[a][1] + t * (pts[b][1] - pts[a][1])),
+                        sd[a][1] + t * (sd[b][1] - sd[a][1]))
+            p_in, s_in = cross(run[0], i_prev)
+            p_out, s_out = cross(run[-1], i_next)
+            lo, hi = min(s_in, s_out), max(s_in, s_out)
+            along = [q for sq, q in edge[side] if lo < sq < hi]
+            if s_out > s_in:
+                along = along[::-1]
+            poly = [p_in] + [pts[k] for k in run] + [p_out] + along
+            if len(poly) >= 3:
+                pieces.append(poly)
+    return pieces, True
+
+
+def _finish_ring(poly, kind):
+    r = FIELD_CORNER_R_M if kind == 'farmland' else RAIL_CORNER_R_M
+    return fillet_ring(simplify_polyline(poly + [poly[0]], 0.05), r)
+
+
+def _piece_ok(poly, kind):
+    ha = poly_area_m2(poly) / 1.0e4
+    if kind == 'farmland':
+        return ha >= FIELD_MIN_HA
+    per = ring_perimeter(poly + [poly[0]])
+    return ha >= 0.15 and (2.0 * ha * 1.0e4 / per if per else 0.0) >= 8.0
+
+
+def build_railway(areas, fields, pads, side=RAIL_SIDE):
+    """The railway's corridor record, with `areas`, `fields` and `pads` trimmed to it in
+    place. Returns `(corridor, report)`, or `(None, [])` if the road is not on the map;
+    `report` lists (area id, hectares removed) for every ring touched."""
+    road = next((c for c in CORRIDORS if c['name'] == RAIL_ALONG_ROAD), None)
+    if road is None:
+        return None, []
+    beside = offset_polyline(road['axis'], side * RAIL_OFFSET_M)
+    d_in = (beside[0][0] - beside[1][0], beside[0][1] - beside[1][1])
+    d_out = (beside[-1][0] - beside[-2][0], beside[-1][1] - beside[-2][1])
+    axis = [_run_to_edge(beside[0], d_in)] + beside + [_run_to_edge(beside[-1], d_out)]
+    half = RAIL_HALF_W_M + RAIL_CLEAR_M
+    report = []
+
+    for a in list(areas):
+        kind = a.get('kind')
+        pieces, touched = _cut_ring_by_axis(a['ring'], axis, half)
+        if not touched:
+            continue
+        kept = [p for p in pieces if _piece_ok(p, kind)]
+        before = ring_area_ha(a['ring'])
+        report.append((a['id'], before - sum(poly_area_m2(p) for p in kept) / 1.0e4))
+        if not kept:
+            areas.remove(a)
+            if a in fields:
+                fields.remove(a)
+            continue
+        kept.sort(key=lambda p: -poly_area_m2(p))
+        a['ring'] = _finish_ring(kept[0], kind)
+        for k, p in enumerate(kept[1:], 1):
+            twin = dict(a, id=f"{a['id']}_{k}", ring=_finish_ring(p, kind))
+            areas.insert(areas.index(a) + k, twin)
+            if a in fields:
+                fields.insert(fields.index(a) + k, twin)
+        for pad in pads:
+            if pad['id'] == a['id'].replace('area', 'pad'):
+                pad['ring'] = a['ring']
+
+    name = f'Ferrocarril ({RAIL_ALONG_ROAD})'
+    return {'id': 'rail_1', 'kind': 'rail', 'name': name, 'axis': axis,
+            'half_width_m': RAIL_HALF_W_M, 'feather_m': RAIL_FEATHER_M,
+            'grade_max': RAIL_GRADE_MAX, 'bridge_spans': [],
+            'tags': {'railway': 'rail', 'name': name}}, report
+
+
+RAILWAY, RAIL_TRIMMED = build_railway(AREAS, FIELDS, PADS)
+if RAILWAY is not None:
+    CORRIDORS.append(RAILWAY)
+
+# --- woods sold in parcels ----------------------------------------------------------
+# A wood the player buys a piece at a time is drawn as that many rings, so each piece
+# is its own parcel downstream. The cuts are straight and run across the wood's spine
+# at equal-area stations, so the parcels are the same size and each one is a slice of
+# the wood and not a sliver of it. The spine is derived from the ring itself - the
+# midline between the two sides of the wood from tip to tip - so redrawing the wood in
+# JOSM moves the cuts with it. The whole ring is kept in `EAST_RIDGE_RING` for the DEM,
+# which runs the ridge under this wood out of the map and needs the wood's east tip.
+WOOD_PARCELS = {EAST_RIDGE_WAY: 5}
+WOOD_PARCEL_NAME = 'Bosque de la Sierra'
+
+
+def _chain_at(chain, cum, t):
+    """The point a fraction `t` of the way along a polyline with cumulative lengths."""
+    target = t * cum[-1]
+    i = bisect.bisect_left(cum, target)
+    i = max(1, min(i, len(chain) - 1))
+    f = (target - cum[i - 1]) / ((cum[i] - cum[i - 1]) or 1.0)
+    return (chain[i - 1][0] + f * (chain[i][0] - chain[i - 1][0]),
+            chain[i - 1][1] + f * (chain[i][1] - chain[i - 1][1]))
+
+
+def split_ring_across(ring, n):
+    """Cut a long ring into `n` pieces of equal area, across its spine. Returns the
+    pieces as closed rings, from the ring's first tip to its second."""
+    pts = _densify_ring(ring, 10.0)
+    m = len(pts)
+    # The tips: the two vertices farthest apart.
+    best = (0.0, 0, 0)
+    for i in range(0, m, 2):
+        for j in range(i + 1, m, 2):
+            d = math.dist(pts[i], pts[j])
+            if d > best[0]:
+                best = (d, i, j)
+    _, i, j = best
+    side_a = pts[i:j + 1]
+    side_b = (pts[j:] + pts[:i + 1])[::-1]
+
+    def cum(chain):
+        out = [0.0]
+        for k in range(1, len(chain)):
+            out.append(out[-1] + math.dist(chain[k - 1], chain[k]))
+        return out
+
+    ca, cb = cum(side_a), cum(side_b)
+    spine = []
+    for k in range(201):
+        t = k / 200.0
+        a, b = _chain_at(side_a, ca, t), _chain_at(side_b, cb, t)
+        spine.append(((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0))
+    cs = cum(spine)
+
+    def cut(t):
+        """The cut across the spine at `t`: a point and the forward unit tangent."""
+        p = _chain_at(spine, cs, t)
+        q0 = _chain_at(spine, cs, max(0.0, t - 0.02))
+        q1 = _chain_at(spine, cs, min(1.0, t + 0.02))
+        ll = math.dist(q0, q1) or 1.0
+        return p, ((q1[0] - q0[0]) / ll, (q1[1] - q0[1]) / ll)
+
+    poly = ring[:-1]
+    total = poly_area_m2(poly)
+
+    def behind(t):
+        p, u = cut(t)
+        return clip_halfplane(poly, p, (-u[0], -u[1]))
+
+    stations = []
+    for k in range(1, n):
+        lo, hi = 0.0, 1.0
+        for _ in range(30):
+            mid = (lo + hi) / 2.0
+            if poly_area_m2(behind(mid)) < total * k / n:
+                lo = mid
+            else:
+                hi = mid
+        stations.append((lo + hi) / 2.0)
+
+    pieces = []
+    for k in range(n):
+        piece = poly
+        if k > 0:
+            p, u = cut(stations[k - 1])
+            piece = clip_halfplane(piece, p, u)
+        if k < n - 1:
+            p, u = cut(stations[k])
+            piece = clip_halfplane(piece, p, (-u[0], -u[1]))
+        pieces.append(simplify_polyline(close_ring(piece), 0.05))
+    return pieces
+
+
+EAST_RIDGE_RING = None
+for _a in list(AREAS):
+    _wid = int(_a['id'].split('_')[1]) if _a['kind'] == 'wood' and _a['id'].count('_') == 1 else None
+    if _wid not in WOOD_PARCELS:
+        continue
+    if _wid == EAST_RIDGE_WAY:
+        EAST_RIDGE_RING = _a['ring']
+    _k = AREAS.index(_a)
+    AREAS.remove(_a)
+    for _i, _ring in enumerate(split_ring_across(_a['ring'], WOOD_PARCELS[_wid]), 1):
+        AREAS.insert(_k + _i - 1, {
+            'id': f"{_a['id']}_{_i}", 'kind': 'wood', 'name': f'{WOOD_PARCEL_NAME} {_i}',
+            'ring': _ring, 'tags': dict(_a['tags'], name=f'{WOOD_PARCEL_NAME} {_i}')})
+
+
+# The shelterbelts are derived from the input rather than read out of it, like the
+# railway: where they stand is decided by the fields and the roads above, and the
+# fields are cut back to make room for them. `SHELTERBELTS` is the list on its own;
 # they are also in `AREAS`, which is what the OSM draws.
 SHELTERBELTS = build_shelterbelts(FIELDS) if FIELDS else []
 AREAS.extend(SHELTERBELTS)
@@ -3263,6 +3638,10 @@ def validate():
             if not (-0.5 <= x <= PLAYABLE_M + 0.5 and -0.5 <= y <= PLAYABLE_M + 0.5):
                 bad.append(f"{a['id']}: point ({x:.1f}, {y:.1f}) outside playable bounds")
                 break
+
+    for a in AREAS:
+        if not ring_is_simple(a['ring']):
+            bad.append(f"{a['id']}: ring crosses itself - a fold the renderers would fill")
 
     _validate_shelterbelts(bad)
     return bad

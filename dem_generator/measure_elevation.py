@@ -29,7 +29,7 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 Image.MAX_IMAGE_PIXELS = None
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +40,9 @@ import terrain_ops as ops                                           # noqa: E402
 from generate_new_dem_12k import (CANVAS_M, PLAYABLE_M, OFFSET_M,    # noqa: E402
                                   BASE_ELEV_M, Z_MAX_CM, STATS_GRID,
                                   WORK_PX, WORK_DX, FEATHER_CAP_M, BANK_DEG,
-                                  water_fields, build_base, rim_ramp)
+                                  TILL_PX, TILL_FLAT_TOL_M,
+                                  water_fields, build_base, rim_ramp, till_weight,
+                                  clean_town_and_reservoir_area)
 from scipy import ndimage                                            # noqa: E402
 
 SLOPE_BASELINE_M = 5.0
@@ -54,6 +56,14 @@ BAND_ROWS = 1024
 RIM_BAND_ROWS = 256           # `rim_field` holds a dozen arrays at once; 1024 rows of
                               # them is half a gigabyte, and none of this is in a hurry
 FLAT_TOL_CM = 0.5             # half a centimetre: the quantisation step is one
+
+# The till, over a 20 m baseline. A field in the Des Moines lobe rolls at one to three
+# degrees; under half a degree at the median is the source DEM's own smoothness, which
+# `roughen_till` exists to correct, and over three at the median would be hill country.
+TILL_BASELINE_M = 20.0
+TILL_SLOPE_P50_DEG = (0.6, 2.0)
+TILL_SLOPE_P90_DEG = (1.2, 3.5)
+TILL_SLOPE_P99_MAX_DEG = 5.0
 
 _results = []
 
@@ -372,6 +382,66 @@ def main():
     worst = max_slope_deg(raw)
     band("steepest slope on the canvas", worst, 0.0, 85.0, " deg")
     info("mountain slopes", f"steepest slope on canvas mountain rim is {worst:.1f} deg")
+
+    # ---------------------------------------------------------------- the till
+    # "What is till" comes from the generator's own `till_weight`, on the same grid it
+    # built the relief on, so the ground judged here is the ground that was shaped -
+    # less the levelled platforms, which are flat by design and would drag the median
+    # down. The flat strip is a separate check: it is flat on purpose, and this is what
+    # notices if some later stage starts leaking relief into it.
+    print(f"\nthe till ({TILL_BASELINE_M:.0f} m baseline):")
+    k4 = PLAYABLE_M // TILL_PX
+    z4 = (play_raw.reshape(k4, TILL_PX, k4, TILL_PX).mean(axis=(1, 3)) / 100.0
+          ).astype(np.float32)
+    w_geo, w_ridge = till_weight(z4, float(TILL_PX))
+    till = (w_geo * w_ridge) > 0.9
+    ax4 = (np.arange(k4, dtype=np.float32) + 0.5) * TILL_PX
+    pad_box = np.zeros(till.shape, dtype=bool)
+    for p in ml.pads():
+        if not p.get('level'):
+            continue
+        cx, cy = p['centre']
+        w, h = p['size']
+        pad_box |= (((ax4 >= cx - w / 2.0 - FEATHER_CAP_M)
+                     & (ax4 <= cx + w / 2.0 + FEATHER_CAP_M))[None, :]
+                    & ((ax4 >= cy - h / 2.0 - FEATHER_CAP_M)
+                       & (ax4 <= cy + h / 2.0 + FEATHER_CAP_M))[:, None])
+    till &= ~pad_box
+    if check("there is till to measure", bool(till.mean() > 0.25),
+             f"{float(till.mean()) * 100:.1f}% of the playable square"):
+        s = ops.slope_deg(z4, float(TILL_PX), baseline_m=TILL_BASELINE_M)[till]
+        p50, p90, p99 = (float(v) for v in np.percentile(s, [50, 90, 99]))
+        band("till slope, median", p50, *TILL_SLOPE_P50_DEG, " deg")
+        band("till slope, 90th percentile", p90, *TILL_SLOPE_P90_DEG, " deg")
+        band("till slope, 99th percentile", p99, 0.0, TILL_SLOPE_P99_MAX_DEG, " deg")
+    # The flat strip, against the source: every flat region the source carries comes
+    # through untouched, except where a later stage is entitled to it - under a
+    # levelled platform (its drain), in the lake and its shore (the basin), and in the
+    # rectangle the old town and reservoir are cleaned out of.
+    src_path = os.path.join(_ROOT, 'input', 'valle_bonito.png')
+    if os.path.exists(src_path):
+        src = (np.array(Image.open(src_path))[o:o + PLAYABLE_M, o:o + PLAYABLE_M]
+               .astype(np.float32) / 100.0)
+        src = clean_town_and_reservoir_area(src)
+        s4 = src.reshape(k4, TILL_PX, k4, TILL_PX).mean(axis=(1, 3)).astype(np.float32)
+        k5 = max(3, int(round(20.0 / TILL_PX)) | 1)
+        flat = (ndimage.maximum_filter(s4, size=k5)
+                - ndimage.minimum_filter(s4, size=k5)) < TILL_FLAT_TOL_M
+        flat = ndimage.binary_opening(flat, iterations=max(1, int(48.0 / TILL_PX)))
+        flat &= ~pad_box
+        for wb in ml.water():
+            if not wb.get('ring'):
+                continue
+            img = Image.new('L', (k4, k4), 0)
+            ImageDraw.Draw(img).polygon([(x / TILL_PX, y / TILL_PX) for x, y in wb['ring']],
+                                        outline=1, fill=1)
+            lake = np.array(img, dtype=bool)
+            flat &= ndimage.distance_transform_edt(~lake) * TILL_PX > (
+                ml.TILL_SHORE_CLEAR_M + ml.TILL_SHORE_FADE_M)
+        moved = float(np.abs(z4 - s4)[flat].max()) if flat.any() else 0.0
+        check("the source's flat ground is left flat", moved < 0.02,
+              f"{float(flat.mean()) * 100:.1f}% of the playable square, "
+              f"moved {moved * 100:.1f} cm at most")
 
     # ---------------------------------------------------------------- stats
     print("\nterrain_stats.json:")

@@ -51,12 +51,16 @@ and fills the registries:
 | `WATER` | `natural=water` | the one lake, as a shore ring |
 | `PADS` | `landuse=farmyard`, `place=town` | levelled platforms (terrain only; `m4fs:level=yes` marks which yards get graded) |
 | `AREAS` | woods, fields, farmyards | every tagged ring the OSM draws; `FIELDS` is the farmland subset |
-| `SHELTERBELTS` | **derived** by `build_shelterbelts(FIELDS)` | the only feature computed rather than read; fields are cut back to make room |
+| `RAILWAY` | **derived** by `build_railway()` | one `railway=rail` corridor offset `RAIL_OFFSET_M` from `RAIL_ALONG_ROAD`, run to the boundary at both ends; every ring it passes through is clipped to its reserve (`_cut_ring_by_axis`), split in two where it crosses |
+| `SHELTERBELTS` | **derived** by `build_shelterbelts(FIELDS)` | laid after the railway, so they keep off it; fields are cut back to make room |
 
 Ways are dropped by id in two sets (`_TOWN_RESERVOIR_WAYS`, `_DROPPED_WAYS`) so the input
 file stays the untouched survey and the module stays the record of what is built. The
 wood on way `EAST_RIDGE_WAY` is stretched out to the clean strip because the DEM runs
-that ridge into the border.
+that ridge into the border, then split into `WOOD_PARCELS` equal-area parcels
+(`split_ring_across`) so it can be bought piecemeal; the whole stretched ring survives as
+`EAST_RIDGE_RING`, which is what `extend_east_ridge` reads. `_FARMLAND_WAYS` retags a
+yard as a field and `_LEVELLED_NAME` marks the "Granja N" yards for levelling.
 
 **Much of `map_layout.py` is dead code from the previous procedural map.** The river,
 PLSS road grid, towns, roadside yards, gallery timber and aliquot parcelling (roughly
@@ -71,9 +75,12 @@ Trust `python3 map_layout.py` and the loader block over any prose.
 documented pipeline (`build_base`, `sculpt`, `build_rim`, `write_dem`) and then, in `main()`,
 if `input/valle_bonito.png` exists it replaces the result with that file: the non-playable
 border is copied verbatim (after `fill_border_trenches`), and the playable square is that
-file's playable square passed through `clean_town_and_reservoir_area`, `level_platforms`
-(the one place `PADS` actually reach the ground), `sculpt_western_lake` and
-`extend_east_ridge`, then blended into the border over a 100 m apron. So the `RIM_*`
+file's playable square passed through `clean_town_and_reservoir_area`, `roughen_till`
+(the swell-and-swale of the till, from the `TILL_*` block in the layout; off on the lake,
+the boundary, the eastern ridge and the deliberately flat strip along the north edge,
+which it detects rather than draws), `level_platforms` (the one place `PADS` actually
+reach the ground), `sculpt_western_lake` and `extend_east_ridge`, then blended into the
+border over a 100 m apron. So the `RIM_*`
 constants, `build_rim`, `grade_pads` and `grade_corridors` do not affect the output, and a
 border defect has to be measured in the source PNG and fixed after the copy in `main()`.
 The module carries two definitions each of `rim_crest` and `rim_ramp`; the later pair wins.

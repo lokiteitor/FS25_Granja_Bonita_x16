@@ -283,6 +283,22 @@ def connect_road_crossings(osm):
                             w['coords'].insert(k, p)
                             w['node_refs'].insert(k, nid)
                             added += 1
+    # T-junctions: a way that *ends* on another way's segment is not a crossing - the
+    # search above wants both segments cut strictly inside - and every town street that
+    # runs out of a primary road ends exactly that way. The end node is inserted into
+    # the way it lands on, so the street is joined to the road rather than touching it.
+    for a in roads:
+        for p in (a['coords'][0], a['coords'][-1]):
+            nid = osm.node(*p)
+            for b in roads:
+                if b is a or nid in b['node_refs']:
+                    continue
+                if any(ml.seg_point_dist(p, b['coords'][i], b['coords'][i + 1]) < 1e-6
+                       for i in range(len(b['coords']) - 1)):
+                    k = _insert_index(b['coords'], p)
+                    b['coords'].insert(k, p)
+                    b['node_refs'].insert(k, nid)
+                    added += 1
     return added
 
 

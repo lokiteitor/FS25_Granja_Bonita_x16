@@ -114,7 +114,9 @@ MASTER_SEED = ml.SEED
 # Named streams with fixed, spaced indices: adding one later must not shift the streams
 # that already exist, or the whole terrain changes underneath you.
 STREAMS = {'moraine': 20, 'swell': 21, 'swale': 22, 'warp_x': 23, 'warp_y': 24,
-           'rim_spur': 10, 'rim_rough': 11, 'micro': 40, 'dither': 41}
+           'rim_spur': 10, 'rim_rough': 11, 'micro': 40, 'dither': 41,
+           'till_swell': 30, 'till_swale': 31, 'till_knob': 32,
+           'till_warp_x': 33, 'till_warp_y': 34}
 
 STATS_GRID = 128                      # terrain_stats.json resolution
 # What counts as fully broken ground, as a gradient. The parcelling reads this to size
@@ -907,8 +909,8 @@ def extend_east_ridge(raw):
     makes the far end need no constant: over the flanks of the border range the range is
     already higher and the operation does nothing at all.
     """
-    ring = next((a['ring'] for a in ml.AREAS
-                 if a['id'] == f'wood_{ml.EAST_RIDGE_WAY}'), None)
+    ring = getattr(ml, 'EAST_RIDGE_RING', None) or next(
+        (a['ring'] for a in ml.AREAS if a['id'] == f'wood_{ml.EAST_RIDGE_WAY}'), None)
     if ring is None:
         return raw, None
 
@@ -966,6 +968,125 @@ def clean_town_and_reservoir_area(valle_play):
         orig = np.maximum(ref_col[y], valle_play[y, 6930:8192])
         out[y, 6930:8192] = (1.0 - w) * ref_col[y] + w * orig
 
+    return out
+
+
+TILL_PX = 4                  # the till relief is built at this pitch and resampled, like
+                             # the synthesis: nothing in it is under 110 m of wavelength
+TILL_FLAT_TOL_M = 0.005      # "exactly the datum of the flat strip", half a centimetre
+
+
+def till_weight(z4, dx=float(TILL_PX)):
+    """Where the till relief goes, on a `dx` m grid of the playable square.
+
+    Returns `(w_geo, w_ridge)`, both 0..1. `w_geo` is the hard geography - zero on the
+    lake and its shore, along the playable boundary and over the deliberately flat strip
+    - and `w_ridge` is 1 on the till and 0 on the eastern ridge, read off the ground's own
+    height and slope. The measurer takes its "what is till" from this same call, so the
+    surface that is judged is the one that was built.
+
+    The flat strip is *detected*, not drawn: it is every region of `TILL_FLAT_MIN_HA` or
+    more where the source DEM sits at one height to the half-centimetre. The source is
+    the only record of where that strip is, and a rectangle written here would stop
+    being right the day it changes. Isolated pixels that happen to land on the same
+    value are opened away first, or each would punch a fade-sized hole in the relief.
+    """
+    sss = ops.smootherstep
+    n = z4.shape[0]
+    ax = (np.arange(n, dtype=np.float32) + 0.5) * dx
+    X, Y = ax[None, :], ax[:, None]
+
+    # The boundary.
+    d_edge = np.minimum(np.minimum(X, ml.PLAYABLE_M - X), np.minimum(Y, ml.PLAYABLE_M - Y))
+    w = sss(d_edge / ml.TILL_EDGE_FADE_M)
+
+    # The lake and its shore, from the ring the lake is carved from.
+    for wb in ml.water():
+        if not wb.get('ring'):
+            continue
+        img = Image.new('L', (n, n), 0)
+        ImageDraw.Draw(img).polygon([(x / dx, y / dx) for x, y in wb['ring']],
+                                    outline=1, fill=1)
+        lake = np.array(img, dtype=bool)
+        d_out = ndimage.distance_transform_edt(~lake) * dx
+        w = w * sss((d_out - ml.TILL_SHORE_CLEAR_M) / ml.TILL_SHORE_FADE_M)
+
+    # The flat strip: one height, held over a region big enough to be meant.
+    k5 = max(3, int(round(20.0 / dx)) | 1)
+    flat = (ndimage.maximum_filter(z4, size=k5)
+            - ndimage.minimum_filter(z4, size=k5)) < TILL_FLAT_TOL_M
+    flat = ndimage.binary_opening(flat, iterations=max(1, int(48.0 / dx)))
+    lbl, k = ndimage.label(flat)
+    if k:
+        sizes = ndimage.sum(flat, lbl, index=np.arange(1, k + 1)) * dx * dx / 1.0e4
+        keep = np.isin(lbl, 1 + np.nonzero(sizes >= ml.TILL_FLAT_MIN_HA)[0])
+        if keep.any():
+            d_flat = ndimage.distance_transform_edt(~keep) * dx
+            w = w * sss(d_flat / ml.TILL_FLAT_FADE_M)
+
+    # The ridge, off the ground itself. Blurred so the fade has no contour of its own.
+    z0, z1 = ml.TILL_RIDGE_Z_M
+    s0, s1 = ml.TILL_RIDGE_SLOPE_DEG
+    slope = ops.slope_deg(z4, dx, baseline_m=20.0)
+    w_ridge = (1.0 - sss((z4 - z0) / (z1 - z0))) * (1.0 - sss((slope - s0) / (s1 - s0)))
+    w_ridge = ndimage.gaussian_filter(w_ridge.astype(np.float32), 40.0 / dx)
+    return w.astype(np.float32), w_ridge.astype(np.float32)
+
+
+def roughen_till(valle_play):
+    """Add the till's swell and swale to the playable square. Returns a new array.
+
+    The source DEM has the moraines and nothing much under 400 m; this is the relief
+    between 110 and 450 m that a field in the Des Moines lobe actually has - see the
+    `TILL_*` block in the layout for the octaves. Built on a `TILL_PX` m grid, weighted
+    by `till_weight`, and resampled to 1 m with the same cubic kernel the synthesis uses.
+
+    It runs before the platforms and before the lake: a platform is levelled over
+    whatever ground it stands on, and the lake carves whatever it meets, so both come
+    out exactly as they would have without this, on ground that now rolls up to them.
+    """
+    n1 = valle_play.shape[0]
+    n = n1 // TILL_PX
+    dx = float(TILL_PX)
+    z4 = valle_play.reshape(n, TILL_PX, n, TILL_PX).mean(axis=(1, 3)).astype(np.float32)
+    ax = (np.arange(n, dtype=np.float32) + 0.5) * dx
+    X, Y = np.meshgrid(ax, ax)
+    span = float(ml.PLAYABLE_M)
+
+    wx = ml.TILL_WARP_M * ops.value_noise(X, Y, ml.TILL_WARP_LAM_M,
+                                          rng_for('till_warp_x'), span)
+    wy = ml.TILL_WARP_M * ops.value_noise(X, Y, ml.TILL_WARP_LAM_M,
+                                          rng_for('till_warp_y'), span)
+    Xw, Yw = X + wx, Y + wy
+    a = math.radians(ml.LAND_MORAINE_GRAIN_DEG)
+    c, sn = math.cos(a), math.sin(a)
+    u = (Xw * c + Yw * sn) / ml.TILL_SWELL_STRETCH
+    v = -Xw * sn + Yw * c
+    swell = ml.TILL_SWELL_M * ops.value_noise(u, v, ml.TILL_SWELL_LAM_M,
+                                              rng_for('till_swell'), span)
+    swale = ml.TILL_SWALE_M * ops.value_noise(Xw, Yw, ml.TILL_SWALE_LAM_M,
+                                              rng_for('till_swale'), span)
+    knob = ml.TILL_KNOB_M * ops.value_noise(Xw, Yw, ml.TILL_KNOB_LAM_M,
+                                            rng_for('till_knob'), span)
+
+    w_geo, w_ridge = till_weight(z4, dx)
+    lift = w_geo * (w_ridge * (swell + swale + knob)
+                    + (1.0 - w_ridge) * ml.TILL_RIDGE_KEEP * swale)
+
+    # To 1 m, banded like `write_dem`. Grid pixel j is centred at dx*j + dx/2, so output
+    # pixel i (centre i + 0.5) sits at grid coordinate (i + 0.5 - dx/2) / dx.
+    out = valle_play.copy()
+    cols = (np.arange(n1, dtype=np.float32) + 0.5 - dx * 0.5) / dx
+    for r0 in range(0, n1, BAND_ROWS):
+        r1 = min(n1, r0 + BAND_ROWS)
+        rows = (np.arange(r0, r1, dtype=np.float32) + 0.5 - dx * 0.5) / dx
+        coords = np.stack(np.broadcast_arrays(rows[:, None], cols[None, :]))
+        out[r0:r1] += ndimage.map_coordinates(lift, coords, order=3, mode='nearest',
+                                              output=np.float32)
+    on = (w_geo * w_ridge) > 0.9
+    print(f"   till relief on {float(on.mean()) * 100:.1f}% of the playable square, "
+          f"rms {float(np.sqrt((lift[on] ** 2).mean())):.2f} m, "
+          f"{float(np.abs(lift).max()):.2f} m at most")
     return out
 
 
@@ -1153,6 +1274,12 @@ def main():
         # Clean town and reservoir area (x in [6850, 8192], y in [800, 2500])
         print("   Cleaning town area and water reservoir in DEM...")
         valle_play = clean_town_and_reservoir_area(valle_play)
+
+        # The till's own relief, before anything is levelled onto it or carved out of
+        # it, so the platforms and the lake end up exactly as they would have on ground
+        # that now rolls up to them.
+        print("   Adding the till's swell and swale...")
+        valle_play = roughen_till(valle_play)
 
         # The platforms, before the lake: a water body carves whatever it meets,
         # so where the two ever overlap the basin wins rather than a flat pan over it.
