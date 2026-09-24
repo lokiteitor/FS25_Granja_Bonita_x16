@@ -1,8 +1,8 @@
 {
     "software": "mapforge 0.1.0",
-    "date": "2026-09-22T15:43:27-06:00",
+    "date": "2026-09-24T10:24:34-06:00",
     "project": {
-        "name": "Granja Bonita",
+        "name": "Granja_Bonita",
         "size": 8192,
         "rotation": 0.0,
         "rotated_size": 8192,
@@ -135,22 +135,22 @@
     ],
     "skipped_stages": [],
     "timings_s": {
-        "template": 0.028,
-        "textures": 12.966,
-        "dem": 10.198,
-        "grle_layers": 8.215,
-        "farmlands": 0.128,
-        "plants": 3.76,
-        "fields": 0.061,
-        "splines": 0.019,
-        "i3d": 0.029,
-        "background": 23.564,
-        "total": 58.966
+        "template": 0.073,
+        "textures": 12.432,
+        "dem": 10.023,
+        "grle_layers": 8.19,
+        "farmlands": 0.119,
+        "plants": 3.71,
+        "fields": 0.058,
+        "splines": 0.017,
+        "i3d": 0.028,
+        "background": 23.425,
+        "total": 58.077
     },
     "components": {
         "template": {
             "template": "/home/ddelgado/git/MapFSGenerator/templates/fs25-map-template.zip",
-            "output_dir": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_bonita"
+            "output_dir": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3"
         },
         "textures": {
             "osm": {
@@ -339,8 +339,8 @@
             "mod_desc_titles": 2
         },
         "background": {
-            "obj": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_bonita/background/decimated_background.obj",
-            "texture": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_bonita/assets/background/background_texture.png",
+            "obj": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3/background/decimated_background.obj",
+            "texture": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3/assets/background/background_texture.png",
             "translation_y": 144.3579766536965,
             "parts": [
                 {
