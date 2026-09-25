@@ -751,10 +751,10 @@
     <File fileId="2" filename="$data/shaders/terrainShader.xml" />
     <File fileId="645" filename="$data/shared/assets/marker/markerIconShopping.i3d" />
     <File fileId="638" filename="$data/shared/groundHeightNoise.dds" />
-    <File fileId="1212" filename="../assets/background/background_terrain_part_01.i3d" />
-    <File fileId="1213" filename="../assets/background/background_terrain_part_02.i3d" />
-    <File fileId="1214" filename="../assets/background/background_terrain_part_03.i3d" />
-    <File fileId="1215" filename="../assets/background/background_terrain_part_04.i3d" />
+    <File fileId="1212" filename="../assets\background\background_terrain_part_01.i3d" />
+    <File fileId="1213" filename="../assets\background\background_terrain_part_02.i3d" />
+    <File fileId="1214" filename="../assets\background\background_terrain_part_03.i3d" />
+    <File fileId="1215" filename="../assets\background\background_terrain_part_04.i3d" />
   </Files>
 
 

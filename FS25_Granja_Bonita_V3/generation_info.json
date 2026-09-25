@@ -1,8 +1,8 @@
 {
     "software": "mapforge 0.1.0",
-    "date": "2026-09-24T10:24:34-06:00",
+    "date": "2026-09-24T21:14:57-06:00",
     "project": {
-        "name": "Granja_Bonita",
+        "name": "Granja Bonita",
         "size": 8192,
         "rotation": 0.0,
         "rotated_size": 8192,
@@ -12,11 +12,11 @@
         "output_size": null
     },
     "inputs": {
-        "heightmap": "/home/ddelgado/git/MapFSGenerator/maps/dem_new_12k.png",
-        "osm": "/home/ddelgado/git/MapFSGenerator/maps/map.osm",
-        "template": "/home/ddelgado/git/MapFSGenerator/templates/fs25-map-template.zip",
-        "texture_schema": "/home/ddelgado/git/MapFSGenerator/config/texture_schema.json",
-        "grle_schema": "/home/ddelgado/git/MapFSGenerator/config/grle_schema.json"
+        "heightmap": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\maps\\dem_new_12k.png",
+        "osm": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\maps\\map.osm",
+        "template": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\templates\\fs25-map-template.zip",
+        "texture_schema": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\config\\texture_schema.json",
+        "grle_schema": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\config\\grle_schema.json"
     },
     "settings": {
         "seed": 42,
@@ -135,22 +135,22 @@
     ],
     "skipped_stages": [],
     "timings_s": {
-        "template": 0.073,
-        "textures": 12.432,
-        "dem": 10.023,
-        "grle_layers": 8.19,
-        "farmlands": 0.119,
-        "plants": 3.71,
-        "fields": 0.058,
-        "splines": 0.017,
-        "i3d": 0.028,
-        "background": 23.425,
-        "total": 58.077
+        "template": 0.048,
+        "textures": 21.02,
+        "dem": 17.153,
+        "grle_layers": 13.117,
+        "farmlands": 0.226,
+        "plants": 5.448,
+        "fields": 0.431,
+        "splines": 0.044,
+        "i3d": 0.333,
+        "background": 34.586,
+        "total": 92.407
     },
     "components": {
         "template": {
-            "template": "/home/ddelgado/git/MapFSGenerator/templates/fs25-map-template.zip",
-            "output_dir": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3"
+            "template": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\templates\\fs25-map-template.zip",
+            "output_dir": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\output\\FS25_Granja_Bonita_V3"
         },
         "textures": {
             "osm": {
@@ -235,8 +235,8 @@
                         "feather": null,
                         "smooth": 25.0
                     },
-                    "changed_pixels": 2087366,
-                    "changed_fraction": 0.013824
+                    "changed_pixels": 1364773,
+                    "changed_fraction": 0.009039
                 },
                 "flattened": {
                     "min": 7710.0,
@@ -262,8 +262,8 @@
                     "feather": null,
                     "smooth": 25.0
                 },
-                "changed_pixels": 2087366,
-                "changed_fraction": 0.013824
+                "changed_pixels": 1364773,
+                "changed_fraction": 0.009039
             }
         },
         "grle_layers": {
@@ -303,8 +303,8 @@
             "base_grass": "meadow",
             "plant_value": 131,
             "islands": 0,
-            "pixels": 60701572,
-            "coverage": 0.2261
+            "pixels": 62643416,
+            "coverage": 0.2334
         },
         "fields": {
             "added": 160,
@@ -339,49 +339,49 @@
             "mod_desc_titles": 2
         },
         "background": {
-            "obj": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3/background/decimated_background.obj",
-            "texture": "/home/ddelgado/git/MapFSGenerator/output/FS25_Granja_Bonita_V3/assets/background/background_texture.png",
+            "obj": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\output\\FS25_Granja_Bonita_V3\\background\\decimated_background.obj",
+            "texture": "C:\\Users\\david\\OneDrive\\Documents\\GitHub\\MapFSGenerator\\output\\FS25_Granja_Bonita_V3\\assets\\background\\background_texture.png",
             "translation_y": 144.3579766536965,
             "parts": [
                 {
                     "name": "background_terrain_part_01",
-                    "i3d": "assets/background/background_terrain_part_01.i3d",
-                    "vertices": 21820,
-                    "faces": 43049
+                    "i3d": "assets\\background\\background_terrain_part_01.i3d",
+                    "vertices": 21914,
+                    "faces": 43236
                 },
                 {
                     "name": "background_terrain_part_02",
-                    "i3d": "assets/background/background_terrain_part_02.i3d",
-                    "vertices": 20688,
-                    "faces": 40754
+                    "i3d": "assets\\background\\background_terrain_part_02.i3d",
+                    "vertices": 20772,
+                    "faces": 40922
                 },
                 {
                     "name": "background_terrain_part_03",
-                    "i3d": "assets/background/background_terrain_part_03.i3d",
-                    "vertices": 22821,
-                    "faces": 45054
+                    "i3d": "assets\\background\\background_terrain_part_03.i3d",
+                    "vertices": 22810,
+                    "faces": 45036
                 },
                 {
                     "name": "background_terrain_part_04",
-                    "i3d": "assets/background/background_terrain_part_04.i3d",
-                    "vertices": 25549,
-                    "faces": 50536
+                    "i3d": "assets\\background\\background_terrain_part_04.i3d",
+                    "vertices": 25534,
+                    "faces": 50516
                 }
             ],
             "mesh": {
-                "vertices": 90453,
-                "faces": 179393,
+                "vertices": 90606,
+                "faces": 179710,
                 "x_size": 12288.0,
                 "y_size": 12288.0,
-                "z_size": 102.8929,
+                "z_size": 102.8907,
                 "x_center": 0.0,
                 "y_center": 0.0,
-                "z_center": -51.4946,
+                "z_center": -51.4935,
                 "x_min": -6144.0,
                 "x_max": 6144.0,
                 "y_min": -6144.0,
                 "y_max": 6144.0,
-                "z_min": -102.941,
+                "z_min": -102.9388,
                 "z_max": -0.0482
             },
             "i3d_references": [
@@ -389,25 +389,25 @@
                     "name": "background_terrain_part_01",
                     "file_id": 1212,
                     "node_id": 9011,
-                    "filename": "../assets/background/background_terrain_part_01.i3d"
+                    "filename": "../assets\\background\\background_terrain_part_01.i3d"
                 },
                 {
                     "name": "background_terrain_part_02",
                     "file_id": 1213,
                     "node_id": 9012,
-                    "filename": "../assets/background/background_terrain_part_02.i3d"
+                    "filename": "../assets\\background\\background_terrain_part_02.i3d"
                 },
                 {
                     "name": "background_terrain_part_03",
                     "file_id": 1214,
                     "node_id": 9013,
-                    "filename": "../assets/background/background_terrain_part_03.i3d"
+                    "filename": "../assets\\background\\background_terrain_part_03.i3d"
                 },
                 {
                     "name": "background_terrain_part_04",
                     "file_id": 1215,
                     "node_id": 9014,
-                    "filename": "../assets/background/background_terrain_part_04.i3d"
+                    "filename": "../assets\\background\\background_terrain_part_04.i3d"
                 }
             ]
         }
