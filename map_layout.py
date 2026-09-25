@@ -2679,7 +2679,7 @@ def wood_tags(leaf_type):
 
 # The road classes the renderers colour, keyed by the `kind` a corridor record carries.
 HIGHWAY_CLASS = {'primary': 'primary', 'secondary': 'secondary', 'tertiary': 'tertiary',
-                 'section': 'secondary', 'track': 'tertiary', 'street': 'tertiary'}
+                 'section': 'secondary', 'track': 'track', 'street': 'tertiary'}
 
 
 # ==================================================================================
@@ -3086,6 +3086,7 @@ if os.path.exists(_INPUT_OSM):
     # rolling like any other field's.
     #   326 Open Ground 1
     _FARMLAND_WAYS = {326}
+    _VILLAGE_STREET_WAYS = set(range(606, 614)) | set(range(659, 667))
 
     for _w in _root.findall('way'):
         _wid = int(_w.get('id'))
@@ -3099,7 +3100,14 @@ if os.path.exists(_INPUT_OSM):
             _tags = {'landuse': 'farmland', 'name': _name}
 
         if 'highway' in _tags:
-            _kind = _tags['highway']
+            if _wid in _VILLAGE_STREET_WAYS:
+                _kind = 'secondary'
+                _tags['highway'] = 'secondary'
+            elif _tags['highway'] == 'tertiary':
+                _kind = 'track'
+                _tags['highway'] = 'track'
+            else:
+                _kind = _tags['highway']
             _half_w = 4.0 if _kind == 'primary' else (3.0 if _kind == 'secondary' else 2.5)
             CORRIDORS.append({
                 'id': f'road_{_wid}',
@@ -3121,6 +3129,8 @@ if os.path.exists(_INPUT_OSM):
                 'tags': _tags,
             })
         elif _tags.get('natural') == 'wood' or _tags.get('landuse') == 'forest':
+            if _tags.get('leaf_type') != 'broadleaved':
+                _tags['leaf_type'] = 'needleleaved'
             AREAS.append({
                 'id': f'wood_{_wid}',
                 'kind': 'wood',
