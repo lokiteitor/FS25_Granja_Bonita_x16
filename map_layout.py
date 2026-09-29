@@ -3083,9 +3083,9 @@ if os.path.exists(_INPUT_OSM):
     # Yards the survey drew that are worked as fields instead. The ring is read as
     # drawn and only its tags are replaced - it becomes farmland, joins `FIELDS` for
     # the shelterbelts, and stops being a pad, so the DEM leaves the ground under it
-    # rolling like any other field's.
-    #   326 Open Ground 1
-    _FARMLAND_WAYS = {326}
+    # rolling like any other field's. None now: Open Ground 1 (326) was the one, and
+    # the input carries it as nine fields of its own (326, 678-685, "Open Ground 1-N").
+    _FARMLAND_WAYS = set()
     _VILLAGE_STREET_WAYS = set(range(606, 614)) | set(range(659, 667))
 
     for _w in _root.findall('way'):
@@ -3430,7 +3430,10 @@ def build_railway(areas, fields, pads, side=RAIL_SIDE):
             'tags': {'railway': 'rail', 'name': name}}, report
 
 
-RAILWAY, RAIL_TRIMMED = build_railway(AREAS, FIELDS, PADS)
+# Off: the map carries no railway, and the rings it would cut stay as drawn.
+RAIL_ENABLED = False
+RAILWAY, RAIL_TRIMMED = (build_railway(AREAS, FIELDS, PADS) if RAIL_ENABLED
+                         else (None, []))
 if RAILWAY is not None:
     CORRIDORS.append(RAILWAY)
 

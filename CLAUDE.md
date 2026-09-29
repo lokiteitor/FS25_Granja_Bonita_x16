@@ -51,8 +51,8 @@ and fills the registries:
 | `WATER` | `natural=water` | the one lake, as a shore ring |
 | `PADS` | `landuse=farmyard`, `place=town` | levelled platforms (terrain only; `m4fs:level=yes` marks which yards get graded) |
 | `AREAS` | woods, fields, farmyards | every tagged ring the OSM draws; `FIELDS` is the farmland subset |
-| `RAILWAY` | **derived** by `build_railway()` | one `railway=rail` corridor offset `RAIL_OFFSET_M` from `RAIL_ALONG_ROAD`, run to the boundary at both ends; every ring it passes through is clipped to its reserve (`_cut_ring_by_axis`), split in two where it crosses |
-| `SHELTERBELTS` | **derived** by `build_shelterbelts(FIELDS)` | laid after the railway, so they keep off it; fields are cut back to make room |
+| `RAILWAY` | **derived** by `build_railway()`, **off** (`RAIL_ENABLED = False`, so `None`) | when on: one `railway=rail` corridor offset `RAIL_OFFSET_M` from `RAIL_ALONG_ROAD`, run to the boundary at both ends; every ring it passes through is clipped to its reserve (`_cut_ring_by_axis`), split in two where it crosses |
+| `SHELTERBELTS` | **derived** by `build_shelterbelts(FIELDS)` | laid after the railway (if any), so they keep off it; fields are cut back to make room |
 
 Ways are dropped by id in two sets (`_TOWN_RESERVOIR_WAYS`, `_DROPPED_WAYS`) so the input
 file stays the untouched survey and the module stays the record of what is built. The
