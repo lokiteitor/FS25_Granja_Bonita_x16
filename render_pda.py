@@ -63,10 +63,39 @@ COLOR_LIMITE_JUGABLE = (255, 255, 255)  # Línea límite del área jugable 2K
 # 3. RUTAS DE ARCHIVOS Y DETECCIÓN
 # ==========================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-MAPA_DIR = os.path.join(SCRIPT_DIR, "FS25_Granja_bonita")
+
+# Permitir seleccionar el mapa por argumento (por ejemplo: python render_pda.py FS25_Granja_Bonita_V5)
+# Si no se especifica, se prioriza FS25_Granja_Bonita_V5 si existe, o FS25_Granja_bonita
+map_arg = None
+for arg in sys.argv[1:]:
+    if not arg.startswith("-"):
+        map_arg = arg
+        break
+
+if map_arg:
+    if os.path.isabs(map_arg):
+        MAPA_DIR = map_arg
+    else:
+        MAPA_DIR = os.path.join(SCRIPT_DIR, map_arg)
+else:
+    default_v5 = os.path.join(SCRIPT_DIR, "FS25_Granja_Bonita_V5")
+    if os.path.exists(default_v5):
+        MAPA_DIR = default_v5
+    else:
+        MAPA_DIR = os.path.join(SCRIPT_DIR, "FS25_Granja_bonita")
+
 MAP_DIR = os.path.join(MAPA_DIR, "map")
 TEXTURES_JSON = os.path.join(MAPA_DIR, "info_layers", "textures.json")
-BG_TEXTURE_PATH = os.path.join(MAPA_DIR, "assets", "background", "background_texture.png")
+
+BG_TEXTURE_CANDIDATOS = [
+    os.path.join(MAPA_DIR, "assets", "background", "background_texture.png"),
+    os.path.join(MAPA_DIR, "background", "background_texture.png"),
+]
+BG_TEXTURE_PATH = None
+for cand in BG_TEXTURE_CANDIDATOS:
+    if os.path.exists(cand):
+        BG_TEXTURE_PATH = cand
+        break
 
 OSM_CANDIDATOS = [
     os.path.join(SCRIPT_DIR, "osm_generator", "map.osm"),
@@ -163,7 +192,7 @@ def renderizar_pda(size_total=4096):
     img = Image.new('RGB', (size_total, size_total), COLOR_BORDE_BG)
     
     # 0. Textura de fondo exterior si existe
-    if os.path.exists(BG_TEXTURE_PATH):
+    if BG_TEXTURE_PATH and os.path.exists(BG_TEXTURE_PATH):
         try:
             bg_im = Image.open(BG_TEXTURE_PATH).convert('RGB').resize((size_total, size_total), Image.BILINEAR)
             img.paste(bg_im, (0, 0))
