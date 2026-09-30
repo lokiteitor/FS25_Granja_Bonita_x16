@@ -82,22 +82,22 @@
     <File fileId="579" filename="data/infoLayer_placementCollisionGenerated.png"/>
     <File fileId="576" filename="data/infoLayer_tipCollision.png"/>
     <File fileId="577" filename="data/infoLayer_tipCollisionGenerated.png"/>
-    <File fileId="798" filename="data/masks/BLOCKMASK.png"/>
-    <File fileId="742" filename="data/masks/PG_acres.png"/>
-    <File fileId="755" filename="data/masks/PG_broadleaved.png"/>
-    <File fileId="749" filename="data/masks/PG_buildings.png"/>
-    <File fileId="748" filename="data/masks/PG_dirtpaths.png"/>
-    <File fileId="752" filename="data/masks/PG_drains.png"/>
-    <File fileId="750" filename="data/masks/PG_farmyards.png"/>
-    <File fileId="745" filename="data/masks/PG_forests.png"/>
-    <File fileId="743" filename="data/masks/PG_grasslands.png"/>
-    <File fileId="744" filename="data/masks/PG_meadows.png"/>
-    <File fileId="754" filename="data/masks/PG_needleleaved.png"/>
-    <File fileId="753" filename="data/masks/PG_railways.png"/>
-    <File fileId="746" filename="data/masks/PG_roads.png"/>
-    <File fileId="747" filename="data/masks/PG_sideroads.png"/>
-    <File fileId="756" filename="data/masks/PG_trees.png"/>
-    <File fileId="751" filename="data/masks/PG_water.png"/>
+    <File fileId="843" filename="data/masks/BLOCKMASK.png"/>
+    <File fileId="787" filename="data/masks/PG_acres.png"/>
+    <File fileId="800" filename="data/masks/PG_broadleaved.png"/>
+    <File fileId="794" filename="data/masks/PG_buildings.png"/>
+    <File fileId="793" filename="data/masks/PG_dirtpaths.png"/>
+    <File fileId="797" filename="data/masks/PG_drains.png"/>
+    <File fileId="795" filename="data/masks/PG_farmyards.png"/>
+    <File fileId="790" filename="data/masks/PG_forests.png"/>
+    <File fileId="788" filename="data/masks/PG_grasslands.png"/>
+    <File fileId="789" filename="data/masks/PG_meadows.png"/>
+    <File fileId="799" filename="data/masks/PG_needleleaved.png"/>
+    <File fileId="798" filename="data/masks/PG_railways.png"/>
+    <File fileId="791" filename="data/masks/PG_roads.png"/>
+    <File fileId="792" filename="data/masks/PG_sideroads.png"/>
+    <File fileId="801" filename="data/masks/PG_trees.png"/>
+    <File fileId="796" filename="data/masks/PG_water.png"/>
     <File fileId="284" filename="data/mudDark01_weight.png"/>
     <File fileId="289" filename="data/mudDark02_weight.png"/>
     <File fileId="334" filename="data/mudDarkGrassPatchy01_weight.png"/>
@@ -206,6 +206,20 @@
     <File fileId="723" filename="$data/maps/mapEU/textures/buildings/waterTower/waterTower.i3d"/>
     <File fileId="721" filename="$data/maps/mapUS/textures/buildings/bank/bank.i3d"/>
     <File fileId="696" filename="$data/maps/mapUS/textures/buildings/gasStation/gasStation.i3d"/>
+    <File fileId="755" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Decal_diffuse.png"/>
+    <File fileId="756" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Decal_specular.png"/>
+    <File fileId="751" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Props_diffuse.png"/>
+    <File fileId="752" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Props_normal.png"/>
+    <File fileId="753" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Props_specular.png"/>
+    <File fileId="758" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Windows_diffuse.png"/>
+    <File fileId="759" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Windows_normal.png"/>
+    <File fileId="760" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02Windows_specular.png"/>
+    <File fileId="743" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_diffuse.png"/>
+    <File fileId="764" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_emissive.png"/>
+    <File fileId="750" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_height.png"/>
+    <File fileId="747" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_mask.png"/>
+    <File fileId="744" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_normal.png"/>
+    <File fileId="745" filename="$data/maps/mapUS/textures/buildings/gasStation02/gasStation02_specular.png"/>
     <File fileId="697" filename="$data/maps/mapUS/textures/buildings/residentialBuildings/residentialBuilding01.i3d"/>
     <File fileId="698" filename="$data/maps/mapUS/textures/buildings/residentialBuildings/residentialBuilding02.i3d"/>
     <File fileId="699" filename="$data/maps/mapUS/textures/buildings/residentialBuildings/residentialBuilding03.i3d"/>
@@ -223,6 +237,9 @@
     <File fileId="711" filename="$data/maps/mapUS/textures/buildings/riverHomes/riverHome03.i3d"/>
     <File fileId="693" filename="$data/maps/mapUS/textures/buildings/vehicleTrader/vehicleTrader.i3d"/>
     <File fileId="716" filename="$data/maps/mapUS/textures/buildings/waterTowers/waterTower05.i3d"/>
+    <File fileId="781" filename="$data/maps/mapUS/textures/curtainsSet_diffuse.png"/>
+    <File fileId="782" filename="$data/maps/mapUS/textures/curtainsSet_normal.png"/>
+    <File fileId="783" filename="$data/maps/mapUS/textures/curtainsSet_specular.png"/>
     <File fileId="5" filename="$data/maps/mapUS/textures/terrain/asphalt01_diffuse.png"/>
     <File fileId="8" filename="$data/maps/mapUS/textures/terrain/asphalt01_displacement.png"/>
     <File fileId="7" filename="$data/maps/mapUS/textures/terrain/asphalt01_height.png"/>
@@ -543,7 +560,20 @@
     <File fileId="221" filename="$data/maps/mapUS/textures/terrain/rockyForestGround02_normal.png"/>
     <File fileId="423" filename="$data/maps/mapUS/textures/terrain/sand01_diffuse.png"/>
     <File fileId="428" filename="$data/maps/mapUS/textures/terrain/sand02_diffuse.png"/>
+    <File fileId="780" filename="$data/maps/mapUS/textures/woodMask_alpha.png"/>
+    <File fileId="769" filename="$data/maps/textures/shared/props/icicles_diffuse.png"/>
+    <File fileId="770" filename="$data/maps/textures/shared/props/icicles_normal.png"/>
+    <File fileId="771" filename="$data/maps/textures/shared/props/icicles_specular.png"/>
+    <File fileId="772" filename="$data/maps/textures/shared/rustLeaksDecals_diffuse.png"/>
+    <File fileId="773" filename="$data/maps/textures/shared/rustLeaksDecals_normal.png"/>
+    <File fileId="774" filename="$data/maps/textures/shared/rustLeaksDecals_specular.png"/>
+    <File fileId="765" filename="$data/maps/textures/shared/snow_diffuse.png"/>
+    <File fileId="766" filename="$data/maps/textures/shared/snow_normal.png"/>
+    <File fileId="740" filename="$data/maps/textures/shared/snow_specular.png"/>
     <File fileId="646" filename="$data/maps/textures/shared/water_normal.png"/>
+    <File fileId="761" filename="$data/maps/textures/shared/windowsGlass_diffuse.png"/>
+    <File fileId="762" filename="$data/maps/textures/shared/windowsGlass_normal.png"/>
+    <File fileId="763" filename="$data/maps/textures/shared/windowsGlass_specular.png"/>
     <File fileId="616" filename="$data/maps/textures/terrain/ground/distance/cultivated_distance_diffuse.png"/>
     <File fileId="630" filename="$data/maps/textures/terrain/ground/distance/directSownFertilized_distance_diffuse.png"/>
     <File fileId="618" filename="$data/maps/textures/terrain/ground/distance/directSown_distance_diffuse.png"/>
@@ -708,58 +738,58 @@
     <File fileId="682" filename="$data/maps/trees/americanElm/americanElm_stage02.i3d"/>
     <File fileId="688" filename="$data/maps/trees/americanElm/americanElm_stage03.i3d"/>
     <File fileId="661" filename="$data/maps/trees/americanElm/americanElm_stage04.i3d"/>
-    <File fileId="757" filename="$data/maps/trees/americanElm/americanElm_stage05.i3d"/>
-    <File fileId="758" filename="$data/maps/trees/apple/apple_stage03.i3d"/>
+    <File fileId="802" filename="$data/maps/trees/americanElm/americanElm_stage05.i3d"/>
+    <File fileId="803" filename="$data/maps/trees/apple/apple_stage03.i3d"/>
     <File fileId="684" filename="$data/maps/trees/aspen/aspen_stage01.i3d"/>
     <File fileId="671" filename="$data/maps/trees/aspen/aspen_stage02.i3d"/>
     <File fileId="676" filename="$data/maps/trees/aspen/aspen_stage03.i3d"/>
     <File fileId="666" filename="$data/maps/trees/aspen/aspen_stage04.i3d"/>
-    <File fileId="759" filename="$data/maps/trees/aspen/aspen_stage05.i3d"/>
-    <File fileId="760" filename="$data/maps/trees/aspen/aspen_stage06_var01.i3d"/>
-    <File fileId="761" filename="$data/maps/trees/aspen/aspen_stage06_var02.i3d"/>
-    <File fileId="762" filename="$data/maps/trees/beech/beech_stage01.i3d"/>
-    <File fileId="763" filename="$data/maps/trees/beech/beech_stage02.i3d"/>
-    <File fileId="764" filename="$data/maps/trees/beech/beech_stage02_var02.i3d"/>
-    <File fileId="765" filename="$data/maps/trees/beech/beech_stage02_var03.i3d"/>
-    <File fileId="766" filename="$data/maps/trees/beech/beech_stage03.i3d"/>
-    <File fileId="767" filename="$data/maps/trees/beech/beech_stage04.i3d"/>
-    <File fileId="768" filename="$data/maps/trees/beech/beech_stage05.i3d"/>
-    <File fileId="769" filename="$data/maps/trees/beech/beech_stage06_var01.i3d"/>
-    <File fileId="770" filename="$data/maps/trees/beech/beech_stage06_var02.i3d"/>
-    <File fileId="771" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage01.i3d"/>
-    <File fileId="772" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage02.i3d"/>
-    <File fileId="773" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage03.i3d"/>
-    <File fileId="774" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage04.i3d"/>
+    <File fileId="804" filename="$data/maps/trees/aspen/aspen_stage05.i3d"/>
+    <File fileId="805" filename="$data/maps/trees/aspen/aspen_stage06_var01.i3d"/>
+    <File fileId="806" filename="$data/maps/trees/aspen/aspen_stage06_var02.i3d"/>
+    <File fileId="807" filename="$data/maps/trees/beech/beech_stage01.i3d"/>
+    <File fileId="808" filename="$data/maps/trees/beech/beech_stage02.i3d"/>
+    <File fileId="809" filename="$data/maps/trees/beech/beech_stage02_var02.i3d"/>
+    <File fileId="810" filename="$data/maps/trees/beech/beech_stage02_var03.i3d"/>
+    <File fileId="811" filename="$data/maps/trees/beech/beech_stage03.i3d"/>
+    <File fileId="812" filename="$data/maps/trees/beech/beech_stage04.i3d"/>
+    <File fileId="813" filename="$data/maps/trees/beech/beech_stage05.i3d"/>
+    <File fileId="814" filename="$data/maps/trees/beech/beech_stage06_var01.i3d"/>
+    <File fileId="815" filename="$data/maps/trees/beech/beech_stage06_var02.i3d"/>
+    <File fileId="816" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage01.i3d"/>
+    <File fileId="817" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage02.i3d"/>
+    <File fileId="818" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage03.i3d"/>
+    <File fileId="819" filename="$data/maps/trees/betulaErmanii/betulaErmanii_stage04.i3d"/>
     <File fileId="674" filename="$data/maps/trees/boxelder/boxelder_stage01.i3d"/>
     <File fileId="675" filename="$data/maps/trees/boxelder/boxelder_stage02.i3d"/>
     <File fileId="665" filename="$data/maps/trees/boxelder/boxelder_stage03.i3d"/>
-    <File fileId="775" filename="$data/maps/trees/cherry/cherry_stage01.i3d"/>
-    <File fileId="776" filename="$data/maps/trees/cherry/cherry_stage02.i3d"/>
-    <File fileId="777" filename="$data/maps/trees/cherry/cherry_stage03.i3d"/>
-    <File fileId="778" filename="$data/maps/trees/cherry/cherry_stage04.i3d"/>
-    <File fileId="779" filename="$data/maps/trees/chineseElm/chineseElm_stage01.i3d"/>
-    <File fileId="780" filename="$data/maps/trees/chineseElm/chineseElm_stage02.i3d"/>
-    <File fileId="781" filename="$data/maps/trees/chineseElm/chineseElm_stage03.i3d"/>
-    <File fileId="782" filename="$data/maps/trees/chineseElm/chineseElm_stage04.i3d"/>
-    <File fileId="783" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage01.i3d"/>
-    <File fileId="784" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage02.i3d"/>
-    <File fileId="785" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage03.i3d"/>
+    <File fileId="820" filename="$data/maps/trees/cherry/cherry_stage01.i3d"/>
+    <File fileId="821" filename="$data/maps/trees/cherry/cherry_stage02.i3d"/>
+    <File fileId="822" filename="$data/maps/trees/cherry/cherry_stage03.i3d"/>
+    <File fileId="823" filename="$data/maps/trees/cherry/cherry_stage04.i3d"/>
+    <File fileId="824" filename="$data/maps/trees/chineseElm/chineseElm_stage01.i3d"/>
+    <File fileId="825" filename="$data/maps/trees/chineseElm/chineseElm_stage02.i3d"/>
+    <File fileId="826" filename="$data/maps/trees/chineseElm/chineseElm_stage03.i3d"/>
+    <File fileId="827" filename="$data/maps/trees/chineseElm/chineseElm_stage04.i3d"/>
+    <File fileId="828" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage01.i3d"/>
+    <File fileId="829" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage02.i3d"/>
+    <File fileId="830" filename="$data/maps/trees/downyServiceBerry/downyServiceBerry_stage03.i3d"/>
     <File fileId="678" filename="$data/maps/trees/goldenRain/goldenRain_stage01.i3d"/>
     <File fileId="679" filename="$data/maps/trees/goldenRain/goldenRain_stage02.i3d"/>
     <File fileId="667" filename="$data/maps/trees/goldenRain/goldenRain_stage03.i3d"/>
     <File fileId="658" filename="$data/maps/trees/goldenRain/goldenRain_stage04.i3d"/>
-    <File fileId="786" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage01.i3d"/>
-    <File fileId="787" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage02.i3d"/>
-    <File fileId="788" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage03.i3d"/>
-    <File fileId="789" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage04.i3d"/>
-    <File fileId="790" filename="$data/maps/trees/lodgepolePine/lodgepolePine_stage01.i3d"/>
+    <File fileId="831" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage01.i3d"/>
+    <File fileId="832" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage02.i3d"/>
+    <File fileId="833" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage03.i3d"/>
+    <File fileId="834" filename="$data/maps/trees/japaneseZelkova/japaneseZelkova_stage04.i3d"/>
+    <File fileId="835" filename="$data/maps/trees/lodgepolePine/lodgepolePine_stage01.i3d"/>
     <File fileId="692" filename="$data/maps/trees/lodgepolePine/lodgepolePine_stage02.i3d"/>
     <File fileId="691" filename="$data/maps/trees/lodgepolePine/lodgepolePine_stage03.i3d"/>
     <File fileId="681" filename="$data/maps/trees/northernCatalpa/northernCatalpa_stage01.i3d"/>
     <File fileId="685" filename="$data/maps/trees/northernCatalpa/northernCatalpa_stage02.i3d"/>
     <File fileId="683" filename="$data/maps/trees/northernCatalpa/northernCatalpa_stage03.i3d"/>
     <File fileId="664" filename="$data/maps/trees/northernCatalpa/northernCatalpa_stage04.i3d"/>
-    <File fileId="791" filename="$data/maps/trees/oak/oak_stage01.i3d"/>
+    <File fileId="836" filename="$data/maps/trees/oak/oak_stage01.i3d"/>
     <File fileId="686" filename="$data/maps/trees/oak/oak_stage02.i3d"/>
     <File fileId="690" filename="$data/maps/trees/oak/oak_stage03.i3d"/>
     <File fileId="659" filename="$data/maps/trees/oak/oak_stage04.i3d"/>
@@ -768,16 +798,16 @@
     <File fileId="669" filename="$data/maps/trees/pinusSylvestris/pinusSylvestris_stage02.i3d"/>
     <File fileId="677" filename="$data/maps/trees/pinusSylvestris/pinusSylvestris_stage03.i3d"/>
     <File fileId="657" filename="$data/maps/trees/pinusSylvestris/pinusSylvestris_stage04.i3d"/>
-    <File fileId="792" filename="$data/maps/trees/pinusSylvestris/pinusSylvestris_stage05.i3d"/>
+    <File fileId="837" filename="$data/maps/trees/pinusSylvestris/pinusSylvestris_stage05.i3d"/>
     <File fileId="689" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage01.i3d"/>
     <File fileId="670" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage02.i3d"/>
     <File fileId="672" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage03.i3d"/>
     <File fileId="656" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage04.i3d"/>
-    <File fileId="793" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage05.i3d"/>
-    <File fileId="794" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage01.i3d"/>
-    <File fileId="795" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage02.i3d"/>
-    <File fileId="796" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage03.i3d"/>
-    <File fileId="797" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage04.i3d"/>
+    <File fileId="838" filename="$data/maps/trees/pinusTabuliformis/pinusTabuliformis_stage05.i3d"/>
+    <File fileId="839" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage01.i3d"/>
+    <File fileId="840" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage02.i3d"/>
+    <File fileId="841" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage03.i3d"/>
+    <File fileId="842" filename="$data/maps/trees/shagbarkHickory/shagbarkHickory_stage04.i3d"/>
     <File fileId="668" filename="$data/maps/trees/tiliaAmurensis/tiliaAmurensis_stage01.i3d"/>
     <File fileId="673" filename="$data/maps/trees/tiliaAmurensis/tiliaAmurensis_stage02.i3d"/>
     <File fileId="663" filename="$data/maps/trees/tiliaAmurensis/tiliaAmurensis_stage03.i3d"/>
@@ -785,18 +815,32 @@
     <File fileId="736" filename="$data/placeables/brandless/fences/US/fence03/fence03_diffuse.png"/>
     <File fileId="737" filename="$data/placeables/brandless/fences/US/fence03/fence03_normal.png"/>
     <File fileId="738" filename="$data/placeables/brandless/fences/US/fence03/fence03_specular.png"/>
+    <File fileId="742" filename="$data/placeables/mapUS/sellingPoints/gasStation/gasStation.i3d"/>
     <File fileId="734" filename="$data/placeables/mapUS/sellingPoints/sellingStationVehicles/sellingStationVehicles.i3d"/>
     <File fileId="694" filename="$data/placeables/mapUS/warehouseLogisticUS/warehouseLogisticUS.i3d"/>
+    <File fileId="746" filename="$data/shaders/buildingShader.xml"/>
+    <File fileId="757" filename="$data/shaders/decalShader.xml"/>
+    <File fileId="754" filename="$data/shaders/glowShader.xml"/>
     <File fileId="637" filename="$data/shaders/groundHeightShader.xml"/>
     <File fileId="647" filename="$data/shaders/oceanShader.xml"/>
     <File fileId="739" filename="$data/shaders/placeableShader.xml"/>
+    <File fileId="767" filename="$data/shaders/snowHeapShader.xml"/>
     <File fileId="2" filename="$data/shaders/terrainShader.xml"/>
+    <File fileId="784" filename="$data/shaders/translucencyShader.xml"/>
+    <File fileId="775" filename="$data/shaders/vertexPaintShader.xml"/>
     <File fileId="645" filename="$data/shared/assets/marker/markerIconShopping.i3d"/>
+    <File fileId="777" filename="$data/shared/default_normal.png"/>
     <File fileId="638" filename="$data/shared/groundHeightNoise.dds"/>
   </Files>
 
 
   <Materials>
+    <Material name="curtainsSet_mat" materialId="250909" customShaderId="784">
+      <Texture fileId="781"/>
+      <Normalmap fileId="782"/>
+      <Glossmap fileId="783"/>
+      <CustomParameter name="translucencyAmount" value="0.7"/>
+    </Material>
     <Material name="fence03_mat" materialId="267957" customShaderId="739">
       <Texture fileId="736"/>
       <Normalmap fileId="737"/>
@@ -807,12 +851,75 @@
       <Normalmap fileId="737"/>
       <Glossmap fileId="738"/>
     </Material>
+    <Material name="gasStation02_mat" materialId="273515" customShaderId="746" customShaderVariation="customParallax">
+      <Texture fileId="743"/>
+      <Normalmap fileId="744"/>
+      <Glossmap fileId="745"/>
+      <Custommap name="mMaskMap" fileId="747"/>
+      <Custommap name="mParallaxMap" fileId="750"/>
+      <CustomParameter name="dirtMossTint" value="-0.12 -0.06 0"/>
+    </Material>
+    <Material name="gasStation02_mat1" materialId="273518" customShaderId="754" customShaderVariation="customEmissiveMap_secondUV">
+      <Texture fileId="743"/>
+      <Normalmap fileId="744"/>
+      <Glossmap fileId="745"/>
+      <Custommap name="mEmissiveMap" fileId="764"/>
+    </Material>
+    <Material name="gasStation02_mat2" materialId="273522" alphaBlending="true" customShaderId="775" customShaderVariation="alphaNoise_alphaMap_customParallax_uv2">
+      <Texture fileId="743"/>
+      <Normalmap fileId="744"/>
+      <Custommap name="alphaMap" fileId="780"/>
+      <Custommap name="mParallaxMap" fileId="750"/>
+      <CustomParameter name="colorTint" value="0.02 0.02 0.01"/>
+    </Material>
+    <Material name="gasStation02Decals_mat" materialId="273523" customShaderId="757">
+      <Texture fileId="755"/>
+      <Glossmap fileId="756"/>
+    </Material>
+    <Material name="gasStation02Props_mat" materialId="273516">
+      <Texture fileId="751"/>
+      <Normalmap fileId="752"/>
+      <Glossmap fileId="753"/>
+    </Material>
+    <Material name="gasStation02Props_mat7" materialId="273521" customShaderId="754" customShaderVariation="additive_colorScale">
+      <Texture fileId="751"/>
+      <Normalmap fileId="752"/>
+      <Glossmap fileId="753"/>
+      <CustomParameter name="lightControl" value="1.5"/>
+    </Material>
+    <Material name="gasStation02Props_mat8" materialId="273520" customShaderId="754" customShaderVariation="customEmissiveMap_secondUV">
+      <Texture fileId="751"/>
+      <Normalmap fileId="752"/>
+      <Glossmap fileId="753"/>
+      <Custommap name="mEmissiveMap" fileId="764"/>
+    </Material>
+    <Material name="gasStation02Windows_mat" materialId="273517">
+      <Texture fileId="758"/>
+      <Normalmap fileId="759"/>
+      <Glossmap fileId="760"/>
+    </Material>
     <Material name="groundDetailHeight_mat" materialId="5" diffuseColor="0 0 0 0" customShaderId="637">
       <Custommap name="heightNoiseMap" fileId="638"/>
+    </Material>
+    <Material name="icicles_mat" materialId="251673" alphaBlending="true" customShaderId="767" customShaderVariation="icicle">
+      <Texture fileId="769"/>
+      <Normalmap fileId="770"/>
+      <Glossmap fileId="771"/>
+      <Refractionmap coeff="1" bumpScale="0.1" withSSRData="false"/>
     </Material>
     <Material name="lambert1" materialId="6" diffuseColor="0.494118 0.494118 0.494118 1">
     </Material>
     <Material name="lambert1" materialId="44465" diffuseColor="0.501961 0.501961 0.501961 1">
+    </Material>
+    <Material name="rustLeaksDecals_mat" materialId="251671" alphaBlending="true" customShaderId="757">
+      <Texture fileId="772"/>
+      <Normalmap fileId="773"/>
+      <Glossmap fileId="774"/>
+    </Material>
+    <Material name="snow_mat" materialId="250899" customShaderId="767">
+      <Texture fileId="765"/>
+      <Normalmap fileId="766" bumpDepth="0.5"/>
+      <Glossmap fileId="740"/>
     </Material>
     <Material name="spline_waterMirror_mat" materialId="7" diffuseColor="1 1 1 1" specularColor="1 1 1" customShaderId="647" customShaderVariation="simple">
       <Normalmap fileId="646"/>
@@ -829,6 +936,14 @@
     </Material>
     <Material name="UnnamedMaterial" materialId="10" diffuseColor="1 1 1 1">
     </Material>
+    <Material name="windowoOpaque_mat" materialId="273519" diffuseColor="0.266667 0.266667 0.266667 1" specularColor="1 1 0.501961">
+      <Normalmap fileId="777"/>
+    </Material>
+    <Material name="windowsGlass_mat" materialId="250906" alphaBlending="true">
+      <Texture fileId="761"/>
+      <Normalmap fileId="762"/>
+      <Glossmap fileId="763"/>
+    </Material>
   </Materials>
 
 
@@ -841,7 +956,7 @@
 
   <Scene>
     <Light name="sun" translation="0 400 0" rotation="-39.5664 39.1063 0" objectMask="0x83ff0000" nodeId="25" type="directional" color="1 1 1" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.001" depthMapResolution="2048" shadowFarDistance="1000" shadowExtrusionDistance="200" softShadowsLightSize="0.5" softShadowsLightDistance="15" softShadowsDepthBiasFactor="1" softShadowsMaxPenumbraSize="0.5" numShadowMapSplits="5" shadowMapSplitDistancesParameter="0.9" lastShadowMapSplitBboxMin="-4096,-128,-4096" lastShadowMapSplitBboxMax="4096,148,4096" range="10000" scattering="true"/>
-    <Camera name="persp" translation="-3271.72 219.019 3735.99" rotation="-63.4692 11.7163 -8.53548e-06" visibility="false" nodeId="26" fov="60" nearClip="0.01" farClip="6000" orthographicHeight="1500"/>
+    <Camera name="persp" translation="-3113.97 70.6536 3561.36" rotation="132.575 -1.67433 -180" visibility="false" nodeId="26" fov="60" nearClip="0.01" farClip="6000" orthographicHeight="1500"/>
     <TerrainTransformGroup name="terrain" static="true" collisionFilterGroup="0x100" collisionFilterMask="0xfffff9c3" nodeId="28" heightMapId="1" patchSize="65" maxLODDistance="750" heightScale="255" unitsPerPixel="1" lodBlendStart="200" lodBlendEnd="300" lodTextureSize="8192" lodBlendStartDynamic="50" lodBlendEndDynamic="65" detailLodBlendDelta="5" materialId="9" castShadowMap="true" occNumLODs="1" occMaxLODDistance="300" occPatchSize="65" occLevel="2" occDistanceWeight="1" occMaxAdjacentFaces="10">
       <OccluderLods>
         <OccluderLod occLodLevel="0" occFaceCount="100" occMaxHausdorffDistance="7" occMaxHausdorffDistanceExtra="9" occMinHorizontalDistance="1" />
@@ -1309,22 +1424,22 @@
           </FoliageMultiLayer>
         </FoliageSystem>
       </Layers>
-      <ProceduralPlacementMasks blockMaskFileId="798">
-        <Mask name="PG_Acres" fileId="742" />
-        <Mask name="PG_Grasslands" fileId="743" />
-        <Mask name="PG_Meadows" fileId="744" />
-        <Mask name="PG_Forests" fileId="745" />
-        <Mask name="PG_Roads" fileId="746" />
-        <Mask name="PG_SideRoads" fileId="747" />
-        <Mask name="PG_DirtPaths" fileId="748" />
-        <Mask name="PG_Buildings" fileId="749" />
-        <Mask name="PG_Farmyards" fileId="750" />
-        <Mask name="PG_Water" fileId="751" />
-        <Mask name="PG_Drains" fileId="752" />
-        <Mask name="PG_Railways" fileId="753" />
-        <Mask name="PG_needleleaved" fileId="754" />
-        <Mask name="PG_broadleaved" fileId="755" />
-        <Mask name="PG_trees" fileId="756" />
+      <ProceduralPlacementMasks blockMaskFileId="843">
+        <Mask name="PG_Acres" fileId="787" />
+        <Mask name="PG_Grasslands" fileId="788" />
+        <Mask name="PG_Meadows" fileId="789" />
+        <Mask name="PG_Forests" fileId="790" />
+        <Mask name="PG_Roads" fileId="791" />
+        <Mask name="PG_SideRoads" fileId="792" />
+        <Mask name="PG_DirtPaths" fileId="793" />
+        <Mask name="PG_Buildings" fileId="794" />
+        <Mask name="PG_Farmyards" fileId="795" />
+        <Mask name="PG_Water" fileId="796" />
+        <Mask name="PG_Drains" fileId="797" />
+        <Mask name="PG_Railways" fileId="798" />
+        <Mask name="PG_needleleaved" fileId="799" />
+        <Mask name="PG_broadleaved" fileId="800" />
+        <Mask name="PG_trees" fileId="801" />
       </ProceduralPlacementMasks>
     </TerrainTransformGroup>
     <TransformGroup name="careerStartPoint" translation="-785.635 0 162.752" rotation="-180 51.6196 -180" nodeId="47"/>
@@ -65401,6 +65516,93 @@
       <Shape name="spline" translation="-99.675 0 -0.273438" rotation="-0 90 0" shapeId="22" nodeId="267894" castsShadows="false" receiveShadows="false" distanceBlending="false"/>
       <Shape name="spline" translation="99.675 0 0.273438" rotation="-0 90 0" shapeId="23" nodeId="269306" castsShadows="false" receiveShadows="false" distanceBlending="false"/>
     </TransformGroup>
+    <TransformGroup name="preplaced_gasStation" lockedgroup="true" translation="-3340.93 43.3619 -3087.86" nodeId="273511">
+      <TransformGroup name="placeable" nodeId="273512">
+        <ReferenceNode name="gasStation" referenceId="742" nodeId="273507"/>
+      </TransformGroup>
+      <TransformGroup name="props" nodeId="273513"/>
+      <TransformGroup name="aiSplines" nodeId="273514"/>
+    </TransformGroup>
+    <TransformGroup name="gasStation02" translation="-793.02 42.8621 1779.01" rotation="0 47.0041 0" lodDistance="0 90" clipDistance="500" nodeId="273551">
+      <TransformGroup name="LOD0" nodeId="273552">
+        <Shape name="gasStation" translation="-38 0 -3.99999" shapeId="24" nodeId="273553" castsShadows="true" receiveShadows="true" materialIds="273515">
+          <Shape name="props" translation="-0.013924 0 0.027824" shapeId="25" nodeId="273554" castsShadows="true" receiveShadows="true" materialIds="273516"/>
+          <TransformGroup name="illum" translation="38 0 3.99999" nodeId="273555">
+            <TransformGroup name="reallights" nodeId="273556">
+              <Light name="lightTOP1" translation="-40.7219 5.80377 -1.81585" rotation="-90 -4e-06 9e-06" clipDistance="100" nodeId="273557" type="spot" color="0.212 0.268 0.308" emitDiffuse="true" emitSpecular="true" range="12" coneAngle="130" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="lightTOP2" translation="-38 5.80377 -4.03116" rotation="-90 -4e-06 9e-06" clipDistance="100" nodeId="273558" type="spot" color="0.212 0.268 0.308" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.02" depthMapResolution="512" shadowFarDistance="80" shadowExtrusionDistance="200" softShadowsLightSize="0.05" softShadowsLightDistance="15" softShadowsDepthBiasFactor="5" softShadowsMaxPenumbraSize="0.5" range="18" coneAngle="130" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="lightTOP3" translation="-40.7219 5.80377 -6.1285" rotation="-90 -4e-06 9e-06" clipDistance="100" nodeId="273559" type="spot" color="0.212 0.268 0.308" emitDiffuse="true" emitSpecular="true" range="12" coneAngle="130" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="lightTOP4" translation="-35.3004 5.80377 -1.81585" rotation="-90 -4e-06 9e-06" clipDistance="100" nodeId="273560" type="spot" color="0.212 0.268 0.308" emitDiffuse="true" emitSpecular="true" range="12" coneAngle="130" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="lightTOP5" translation="-35.3004 5.80377 -6.1285" rotation="-90 -4e-06 9e-06" clipDistance="100" nodeId="273561" type="spot" color="0.212 0.268 0.308" emitDiffuse="true" emitSpecular="true" range="12" coneAngle="130" dropOff="0" weatherRequiredMask="0x40"/>
+            </TransformGroup>
+            <TransformGroup name="selfIllum" nodeId="273562">
+              <Shape name="lights" translation="-38.0139 0 -3.97217" shapeId="26" clipDistance="150" nodeId="273563" castsShadows="true" receiveShadows="true" materialIds="273521" weatherRequiredMask="0x40" renderInvisible="true"/>
+            </TransformGroup>
+          </TransformGroup>
+          <Shape name="gasStationDecals" translation="38 0 3.99999" shapeId="27" clipDistance="200" nodeId="273564" castsShadows="false" receiveShadows="true" decalLayer="1" materialIds="273523"/>
+        </Shape>
+        <Shape name="gasStationDiner" shapeId="28" clipDistance="300" nodeId="273565" castsShadows="true" receiveShadows="true" materialIds="273515">
+          <Shape name="windows" shapeId="29" clipDistance="300" nodeId="273566" castsShadows="true" receiveShadows="true" materialIds="273517"/>
+          <Shape name="glass" shapeId="30" clipDistance="100" nodeId="273567" castsShadows="true" receiveShadows="true" materialIds="250906"/>
+          <Shape name="props" shapeId="31" clipDistance="150" nodeId="273568" castsShadows="true" receiveShadows="true" materialIds="273516"/>
+          <TransformGroup name="illum" nodeId="273569">
+            <TransformGroup name="selfIllum" nodeId="273570">
+              <Shape name="propsInterior" shapeId="32" clipDistance="75" nodeId="273571" castsShadows="true" receiveShadows="true" materialIds="273520" weatherRequiredMask="0x40" renderInvisible="true"/>
+              <Shape name="interior" shapeId="33" clipDistance="75" nodeId="273572" castsShadows="true" receiveShadows="true" materialIds="273518" weatherRequiredMask="0x40" renderInvisible="true"/>
+              <Shape name="lights" shapeId="34" clipDistance="75" nodeId="273573" castsShadows="true" receiveShadows="true" materialIds="273521" weatherRequiredMask="0x40" renderInvisible="true"/>
+            </TransformGroup>
+            <TransformGroup name="realLights" nodeId="273574" weatherRequiredMask="0x40">
+              <Light name="spotLights2" translation="-15.323 1.964 1.59367" rotation="90 0 121.578" clipDistance="100" nodeId="273575" type="spot" color="0.2913 0.308 0.212" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.02" depthMapResolution="512" shadowFarDistance="80" shadowExtrusionDistance="200" softShadowsLightSize="0.05" softShadowsLightDistance="15" softShadowsDepthBiasFactor="5" softShadowsMaxPenumbraSize="0.5" range="10" coneAngle="140" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="spotLights1" translation="-15.323 1.964 -2.707" rotation="90 0 121.578" clipDistance="100" nodeId="273576" type="spot" color="0.2913 0.308 0.212" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.02" depthMapResolution="512" shadowFarDistance="80" shadowExtrusionDistance="200" softShadowsLightSize="0.05" softShadowsLightDistance="15" softShadowsDepthBiasFactor="5" softShadowsMaxPenumbraSize="0.5" range="10" coneAngle="140" dropOff="0" weatherRequiredMask="0x40"/>
+              <Light name="pointLight01" translation="-15.985 1.64064 -3.99391" rotation="0 90 0" nodeId="273577" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight02" translation="-15.985 1.64064 3.96458" rotation="0 90 0" nodeId="273578" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight03" translation="-15.985 1.69618 1.7308" rotation="0 89.9999 0" nodeId="273579" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight04" translation="-15.985 1.69618 -1.75731" rotation="0 89.9999 0" nodeId="273580" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight05" translation="-15.985 1.63786 -0.014908" rotation="0 90 0" nodeId="273581" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight06" translation="-10.4163 1.63786 -6.41867" rotation="0 -1.4e-05 0" nodeId="273582" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight07" translation="-11.7735 1.63978 6.66914" rotation="0 180 0" nodeId="273583" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight08" translation="-1.67156 1.63525 8.88116" rotation="0 180 0" nodeId="273584" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight09" translation="3.15355 1.63525 8.88116" rotation="0 180 0" nodeId="273585" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight10" translation="7.90489 1.64064 -4.05786" rotation="0 -90 0" nodeId="273586" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="pointLight11" translation="7.90048 1.69618 -1.81331" rotation="0 -90 0" nodeId="273587" type="point" color="0.08 0.08 0.045" emitDiffuse="true" emitSpecular="true" range="5"/>
+              <Light name="spotLights3" translation="7.07423 2.04803 -3" rotation="-90 0 61.578" clipDistance="100" nodeId="273588" type="spot" color="0.2913 0.308 0.212" emitDiffuse="true" emitSpecular="true" castShadowMap="true" depthMapBias="0.001" depthMapSlopeScaleBias="2" depthMapSlopeClamp="0.02" depthMapResolution="512" shadowFarDistance="80" shadowExtrusionDistance="200" softShadowsLightSize="0.05" softShadowsLightDistance="15" softShadowsDepthBiasFactor="5" softShadowsMaxPenumbraSize="0.5" range="10" coneAngle="140" dropOff="0" weatherRequiredMask="0x40"/>
+            </TransformGroup>
+          </TransformGroup>
+          <TransformGroup name="seasons" nodeId="273589" weatherRequiredMask="0x400">
+            <TransformGroup name="winter" nodeId="273590">
+              <Shape name="snow" shapeId="35" nodeId="273591" castsShadows="true" receiveShadows="true" materialIds="250899" weatherRequiredMask="0x400"/>
+              <Shape name="icicles" shapeId="36" clipDistance="150" nodeId="273592" castsShadows="true" receiveShadows="true" materialIds="251673" weatherRequiredMask="0x400"/>
+            </TransformGroup>
+          </TransformGroup>
+          <TransformGroup name="decals" nodeId="273593">
+            <Shape name="rustDecal" shapeId="37" clipDistance="75" nodeId="273594" castsShadows="false" receiveShadows="true" decalLayer="1" materialIds="251671"/>
+            <Shape name="woodDecal" shapeId="38" clipDistance="75" nodeId="273595" castsShadows="false" receiveShadows="true" decalLayer="1" materialIds="273522"/>
+            <Shape name="dinerDecals" shapeId="39" clipDistance="200" nodeId="273596" castsShadows="false" receiveShadows="true" decalLayer="1" materialIds="273523"/>
+          </TransformGroup>
+          <Shape name="curtains" shapeId="40" clipDistance="75" nodeId="273597" castsShadows="true" receiveShadows="true" materialIds="250909"/>
+        </Shape>
+      </TransformGroup>
+      <TransformGroup name="LOD1" nodeId="273598">
+        <Shape name="gasStationDiner" shapeId="41" nodeId="273599" castsShadows="true" receiveShadows="true" materialIds="273515">
+          <Shape name="windows" shapeId="42" nodeId="273600" castsShadows="true" receiveShadows="true" materialIds="273517"/>
+          <Shape name="propsInterior" shapeId="43" nodeId="273601" castsShadows="true" receiveShadows="true" materialIds="273516"/>
+          <Shape name="props" shapeId="44" nodeId="273602" castsShadows="true" receiveShadows="true" materialIds="273516"/>
+          <Shape name="interior" shapeId="45" nodeId="273603" castsShadows="true" receiveShadows="true" materialIds="273515"/>
+        </Shape>
+        <Shape name="gasStation" translation="-38 0 -3.99999" shapeId="46" nodeId="273604" castsShadows="true" receiveShadows="true" materialIds="273515">
+          <Shape name="props" translation="-0.013924 3.08484 0.027824" shapeId="47" nodeId="273605" castsShadows="true" receiveShadows="true" materialIds="273516"/>
+        </Shape>
+        <Shape name="glass" shapeId="30" clipDistance="100" nodeId="273606" castsShadows="true" receiveShadows="true" materialIds="273519"/>
+      </TransformGroup>
+      <Shape name="col" shapeId="48" static="true" collisionFilterMask="0xfffffbff" density="0.0001" nodeId="273607" castsShadows="true" receiveShadows="true" nonRenderable="true" materialIds="44465"/>
+      <TransformGroup name="preplaced_gasStation" lockedgroup="true" translation="-37.187 0.156052 -1.26276" nodeId="275052">
+        <TransformGroup name="placeable" nodeId="275053">
+          <ReferenceNode name="gasStation" referenceId="742" nodeId="275048"/>
+        </TransformGroup>
+        <TransformGroup name="props" nodeId="275054"/>
+        <TransformGroup name="aiSplines" nodeId="275055"/>
+      </TransformGroup>
+    </TransformGroup>
   </Scene>
 
   <ProceduralPlacement>
@@ -65486,58 +65688,58 @@
       <Object type="reference" name="americanElm_stage02" fileId="682" ppType="defaultReference" />
       <Object type="reference" name="americanElm_stage03" fileId="688" ppType="mediumTree" />
       <Object type="reference" name="americanElm_stage04" fileId="661" ppType="parentTrees" />
-      <Object type="reference" name="americanElm_stage05" fileId="757" ppType="defaultReference" />
-      <Object type="reference" name="apple_stage03" fileId="758" ppType="mediumTree" />
+      <Object type="reference" name="americanElm_stage05" fileId="802" ppType="defaultReference" />
+      <Object type="reference" name="apple_stage03" fileId="803" ppType="mediumTree" />
       <Object type="reference" name="aspen_stage01" fileId="684" ppType="smallTrees" />
       <Object type="reference" name="aspen_stage02" fileId="671" ppType="defaultReference" />
       <Object type="reference" name="aspen_stage03" fileId="676" ppType="mediumTree" />
       <Object type="reference" name="aspen_stage04" fileId="666" ppType="parentTrees" />
-      <Object type="reference" name="aspen_stage05" fileId="759" ppType="defaultReference" />
-      <Object type="reference" name="aspen_stage06_var01" fileId="760" ppType="defaultReference" />
-      <Object type="reference" name="aspen_stage06_var02" fileId="761" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage01" fileId="762" ppType="smallTrees" />
-      <Object type="reference" name="beech_stage02" fileId="763" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage02_var02" fileId="764" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage02_var03" fileId="765" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage03" fileId="766" ppType="mediumTree" />
-      <Object type="reference" name="beech_stage04" fileId="767" ppType="parentTrees" />
-      <Object type="reference" name="beech_stage05" fileId="768" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage06_var01" fileId="769" ppType="defaultReference" />
-      <Object type="reference" name="beech_stage06_var02" fileId="770" ppType="defaultReference" />
-      <Object type="reference" name="betulaErmanii_stage01" fileId="771" ppType="defaultReference" />
-      <Object type="reference" name="betulaErmanii_stage02" fileId="772" ppType="defaultReference" />
-      <Object type="reference" name="betulaErmanii_stage03" fileId="773" ppType="mediumTree" />
-      <Object type="reference" name="betulaErmanii_stage04" fileId="774" ppType="parentTrees" />
+      <Object type="reference" name="aspen_stage05" fileId="804" ppType="defaultReference" />
+      <Object type="reference" name="aspen_stage06_var01" fileId="805" ppType="defaultReference" />
+      <Object type="reference" name="aspen_stage06_var02" fileId="806" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage01" fileId="807" ppType="smallTrees" />
+      <Object type="reference" name="beech_stage02" fileId="808" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage02_var02" fileId="809" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage02_var03" fileId="810" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage03" fileId="811" ppType="mediumTree" />
+      <Object type="reference" name="beech_stage04" fileId="812" ppType="parentTrees" />
+      <Object type="reference" name="beech_stage05" fileId="813" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage06_var01" fileId="814" ppType="defaultReference" />
+      <Object type="reference" name="beech_stage06_var02" fileId="815" ppType="defaultReference" />
+      <Object type="reference" name="betulaErmanii_stage01" fileId="816" ppType="defaultReference" />
+      <Object type="reference" name="betulaErmanii_stage02" fileId="817" ppType="defaultReference" />
+      <Object type="reference" name="betulaErmanii_stage03" fileId="818" ppType="mediumTree" />
+      <Object type="reference" name="betulaErmanii_stage04" fileId="819" ppType="parentTrees" />
       <Object type="reference" name="boxelder_stage01" fileId="674" ppType="smallTrees" />
       <Object type="reference" name="boxelder_stage02" fileId="675" ppType="defaultReference" />
       <Object type="reference" name="boxelder_stage03" fileId="665" ppType="mediumTree" />
-      <Object type="reference" name="cherry_stage01" fileId="775" ppType="smallTrees" />
-      <Object type="reference" name="cherry_stage02" fileId="776" ppType="defaultReference" />
-      <Object type="reference" name="cherry_stage03" fileId="777" ppType="mediumTree" />
-      <Object type="reference" name="cherry_stage04" fileId="778" ppType="parentTrees" />
-      <Object type="reference" name="chineseElm_stage01" fileId="779" ppType="smallTrees" />
-      <Object type="reference" name="chineseElm_stage02" fileId="780" ppType="defaultReference" />
-      <Object type="reference" name="chineseElm_stage03" fileId="781" ppType="mediumTree" />
-      <Object type="reference" name="chineseElm_stage04" fileId="782" ppType="parentTrees" />
-      <Object type="reference" name="downyServiceBerry_stage01" fileId="783" ppType="defaultReference" />
-      <Object type="reference" name="downyServiceBerry_stage02" fileId="784" ppType="defaultReference" />
-      <Object type="reference" name="downyServiceBerry_stage03" fileId="785" ppType="mediumTree" />
+      <Object type="reference" name="cherry_stage01" fileId="820" ppType="smallTrees" />
+      <Object type="reference" name="cherry_stage02" fileId="821" ppType="defaultReference" />
+      <Object type="reference" name="cherry_stage03" fileId="822" ppType="mediumTree" />
+      <Object type="reference" name="cherry_stage04" fileId="823" ppType="parentTrees" />
+      <Object type="reference" name="chineseElm_stage01" fileId="824" ppType="smallTrees" />
+      <Object type="reference" name="chineseElm_stage02" fileId="825" ppType="defaultReference" />
+      <Object type="reference" name="chineseElm_stage03" fileId="826" ppType="mediumTree" />
+      <Object type="reference" name="chineseElm_stage04" fileId="827" ppType="parentTrees" />
+      <Object type="reference" name="downyServiceBerry_stage01" fileId="828" ppType="defaultReference" />
+      <Object type="reference" name="downyServiceBerry_stage02" fileId="829" ppType="defaultReference" />
+      <Object type="reference" name="downyServiceBerry_stage03" fileId="830" ppType="mediumTree" />
       <Object type="reference" name="goldenRain_stage01" fileId="678" ppType="smallTrees" />
       <Object type="reference" name="goldenRain_stage02" fileId="679" ppType="defaultReference" />
       <Object type="reference" name="goldenRain_stage03" fileId="667" ppType="defaultReference" />
       <Object type="reference" name="goldenRain_stage04" fileId="658" ppType="parentTrees" />
-      <Object type="reference" name="japaneseZelkova_stage01" fileId="786" ppType="smallTrees" />
-      <Object type="reference" name="japaneseZelkova_stage02" fileId="787" ppType="defaultReference" />
-      <Object type="reference" name="japaneseZelkova_stage03" fileId="788" ppType="mediumTree" />
-      <Object type="reference" name="japaneseZelkova_stage04" fileId="789" ppType="parentTrees" />
-      <Object type="reference" name="lodgepolePine_stage01" fileId="790" ppType="smallTrees" />
+      <Object type="reference" name="japaneseZelkova_stage01" fileId="831" ppType="smallTrees" />
+      <Object type="reference" name="japaneseZelkova_stage02" fileId="832" ppType="defaultReference" />
+      <Object type="reference" name="japaneseZelkova_stage03" fileId="833" ppType="mediumTree" />
+      <Object type="reference" name="japaneseZelkova_stage04" fileId="834" ppType="parentTrees" />
+      <Object type="reference" name="lodgepolePine_stage01" fileId="835" ppType="smallTrees" />
       <Object type="reference" name="lodgepolePine_stage02" fileId="692" ppType="defaultReference" />
       <Object type="reference" name="lodgepolePine_stage03" fileId="691" ppType="mediumTree" />
       <Object type="reference" name="northernCatalpa_stage01" fileId="681" ppType="smallTrees" />
       <Object type="reference" name="northernCatalpa_stage02" fileId="685" ppType="defaultReference" />
       <Object type="reference" name="northernCatalpa_stage03" fileId="683" ppType="mediumTree" />
       <Object type="reference" name="northernCatalpa_stage04" fileId="664" ppType="parentTrees" />
-      <Object type="reference" name="oak_stage01" fileId="791" ppType="smallTrees" />
+      <Object type="reference" name="oak_stage01" fileId="836" ppType="smallTrees" />
       <Object type="reference" name="oak_stage02" fileId="686" ppType="defaultReference" />
       <Object type="reference" name="oak_stage03" fileId="690" ppType="mediumTree" />
       <Object type="reference" name="oak_stage04" fileId="659" ppType="parentTrees" />
@@ -65546,16 +65748,16 @@
       <Object type="reference" name="pinusSylvestris_stage02" fileId="669" ppType="defaultReference" />
       <Object type="reference" name="pinusSylvestris_stage03" fileId="677" ppType="mediumTree" />
       <Object type="reference" name="pinusSylvestris_stage04" fileId="657" ppType="parentTrees" />
-      <Object type="reference" name="pinusSylvestris_stage05" fileId="792" ppType="defaultReference" />
+      <Object type="reference" name="pinusSylvestris_stage05" fileId="837" ppType="defaultReference" />
       <Object type="reference" name="pinusTabuliformis_stage01" fileId="689" ppType="smallTrees" />
       <Object type="reference" name="pinusTabuliformis_stage02" fileId="670" ppType="defaultReference" />
       <Object type="reference" name="pinusTabuliformis_stage03" fileId="672" ppType="mediumTree" />
       <Object type="reference" name="pinusTabuliformis_stage04" fileId="656" ppType="parentTrees" />
-      <Object type="reference" name="pinusTabuliformis_stage05" fileId="793" ppType="defaultReference" />
-      <Object type="reference" name="shagbarkHickory_stage01" fileId="794" ppType="smallTrees" />
-      <Object type="reference" name="shagbarkHickory_stage02" fileId="795" ppType="defaultReference" />
-      <Object type="reference" name="shagbarkHickory_stage03" fileId="796" ppType="mediumTree" />
-      <Object type="reference" name="shagbarkHickory_stage04" fileId="797" ppType="parentTrees" />
+      <Object type="reference" name="pinusTabuliformis_stage05" fileId="838" ppType="defaultReference" />
+      <Object type="reference" name="shagbarkHickory_stage01" fileId="839" ppType="smallTrees" />
+      <Object type="reference" name="shagbarkHickory_stage02" fileId="840" ppType="defaultReference" />
+      <Object type="reference" name="shagbarkHickory_stage03" fileId="841" ppType="mediumTree" />
+      <Object type="reference" name="shagbarkHickory_stage04" fileId="842" ppType="parentTrees" />
       <Object type="reference" name="tiliaAmurensis_stage01" fileId="668" ppType="smallTrees" />
       <Object type="reference" name="tiliaAmurensis_stage02" fileId="673" ppType="defaultReference" />
       <Object type="reference" name="tiliaAmurensis_stage03" fileId="663" ppType="mediumTree" />
@@ -67938,6 +68140,20 @@
     </UserAttribute>
     <UserAttribute nodeId="269412">
       <Attribute name="isFenceGroup" type="boolean" value="true"/>
+    </UserAttribute>
+    <UserAttribute nodeId="273511">
+      <Attribute name="aiSplines" type="string" value="2"/>
+      <Attribute name="boughtWithFarmlandOverwrite" type="boolean" value="false"/>
+      <Attribute name="onCreate" type="scriptCallback" value="Placeable.onCreate"/>
+      <Attribute name="uniqueId" type="string" value="preplaced_gasStation_030be81b9a659624a93865fd33d1dfa13"/>
+      <Attribute name="xmlFilename" type="string" value="$data/placeables/mapUS/sellingPoints/gasStation/gasStation01.xml"/>
+    </UserAttribute>
+    <UserAttribute nodeId="275052">
+      <Attribute name="aiSplines" type="string" value="2"/>
+      <Attribute name="boughtWithFarmlandOverwrite" type="boolean" value="false"/>
+      <Attribute name="onCreate" type="scriptCallback" value="Placeable.onCreate"/>
+      <Attribute name="uniqueId" type="string" value="preplaced_gasStation_0d6e31c69b0ac1383ab62adb92183479e"/>
+      <Attribute name="xmlFilename" type="string" value="$data/placeables/mapUS/sellingPoints/gasStation/gasStation01.xml"/>
     </UserAttribute>
   </UserAttributes>
 

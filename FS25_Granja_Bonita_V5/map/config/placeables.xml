@@ -1,3 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <placeables version="2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../shared/xml/schema/savegame_placeables.xsd">
+    <placeable isPreplaced="true" uniqueId="preplaced_buyingStationLiquidManure_7a4a6779b0a1fd4777acbe046e303e78"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_sellingStationVehicles_0dfce1cf2ffbccbf7e9e6ed665e3a06f1"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_animalTrader_3a3fe89f7cbc68cf9d248b994f6268a5"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_sellingStationProducts_d4837e2423a2042b2945f18aa901b230"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_buyingStationManure_26e11bad657c21bcc0983a0d3f8f941e"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_warehouseLogisticUS_0a0bd4f0a2d3e502048bbba2827868090"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_gasStation_0d6e31c69b0ac1383ab62adb92183479e"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_gasStation_13ee9648713b535580698aa154c34a595"/>
+    <placeable isPreplaced="true" uniqueId="preplaced_gasStation_030be81b9a659624a93865fd33d1dfa13"/>
 </placeables>
