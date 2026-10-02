@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="iso-8859-1"?>
+<i3D name="structureStoreClothes01_lod.i3d" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+    <Asset>
+        <Export program="GIANTS Editor 64bit" version="10.0.13"/>
+    </Asset>
+    <Files>
+        <File fileId="1" filename="textures/structureStoreClothes01.i3d"/>
+    </Files>
+    <Materials/>
+    <Shapes/>
+    <Scene>
+        <ReferenceNode name="structureStoreClothes01_lod" translation="911 44.2465 790.5" referenceId="1" nodeId="4935"/>
+    </Scene>
+</i3D>

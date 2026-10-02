@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="iso-8859-1"?>
+<i3D name="rb9.i3d" version="1.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://i3d.giants.ch/schema/i3d-1.6.xsd">
+    <Asset>
+        <Export program="GIANTS Editor 64bit" version="10.0.13"/>
+    </Asset>
+    <Files>
+        <File fileId="1" filename="textures/residentialBuilding09.i3d"/>
+    </Files>
+    <Materials/>
+    <Shapes/>
+    <Scene>
+        <ReferenceNode name="residentialBuilding09_lod" translation="860 51.5 605" referenceId="1" nodeId="3047"/>
+    </Scene>
+</i3D>
